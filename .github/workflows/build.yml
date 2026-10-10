@@ -1,0 +1,36 @@
+name: Build and test
+on: [push, pull_request]
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/desktop/ui/package-lock.json
+      - run: npm ci --prefix apps/desktop/ui
+      - run: npm run build --prefix apps/desktop/ui
+      - run: npm test --prefix apps/desktop/ui
+      - name: Download WebView2 SDK
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.2903.40 -OutFile "$env:RUNNER_TEMP/webview.zip"
+          Expand-Archive "$env:RUNNER_TEMP/webview.zip" "$env:RUNNER_TEMP/webview"
+      - run: cmake -S . -B build -A x64 -DWEBVIEW2_SDK_DIR="$env:RUNNER_TEMP/webview"
+      - run: cmake --build build --config Release
+      - run: ctest --test-dir build -C Release --output-on-failure
+      - uses: actions/upload-artifact@v4
+        with:
+          name: miyazato-windows-foundation
+          path: |
+            build/Release/MiyazatoSpatialEngine.exe
+            build/Release/ui/
+  portable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build -DMIYAZATO_BUILD_DESKTOP=OFF -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build -j 4
+      - run: ctest --test-dir build --output-on-failure

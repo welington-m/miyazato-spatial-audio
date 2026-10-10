@@ -1,0 +1,20 @@
+{
+  "brand": "Miyazato Spatial Engine",
+  "logo_status": "Official - Option 1 selected on 2026-10-10",
+  "primary_colors": {
+    "graphite": "#0F1114",
+    "near_black": "#07090B",
+    "electric_lime": "#97EB00",
+    "lime_highlight": "#B2FF00",
+    "white": "#F7F8FA",
+    "muted_gray": "#AAB1B8"
+  },
+  "tagline": "Precision. Space. Clarity.",
+  "usage": {
+    "windows_icon": "icons/miyazato-spatial-engine.ico",
+    "primary_logo": "logos/mse-logo-official-1254.png",
+    "transparent_logo": "logos/mse-logo-transparent.png",
+    "horizontal_logo": "logos/mse-logo-horizontal-dark.png",
+    "splash": "splash/mse-splash-1920x1080.png"
+  }
+}
