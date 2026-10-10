@@ -643,12 +643,13 @@ miyazato-spatial-engine/
 Recommended development environment:
 
 ```text
-Windows 11
-Visual Studio 2022 or newer
-CMake 3.25+
-Node.js 22+
-npm or pnpm
-Git
+Windows 11 x64
+Visual Studio Community 2026: Desktop development with C++, MSVC v145
+Windows 11 SDK (installed compatible version; no patch version pinned)
+CMake 4.2+ for Visual Studio 18 2026
+Node.js LTS (22.12+), npm, Git
+Microsoft Edge WebView2 Runtime
+Extracted WebView2 SDK 1.0.2903.40
 ```
 
 C++ compiler:
@@ -668,22 +669,27 @@ git clone <repository-url>
 cd miyazato-spatial-engine
 ```
 
-Configure the native project:
+Build the frontend first with `npm install` and `npm run build` in `apps/desktop/ui`.
+Set `WEBVIEW2_SDK_DIR` to the extracted SDK (headers and x64 static loader).
+See [Windows build instructions](docs/build-windows.md) for setup, presets, and VS2022/v143 compatibility.
+[Migration validation](docs/build-toolchain-update.md): Visual Studio 2026 build not verified in this environment.
 
-```bash
-cmake -S . -B build
+Configure the native project from PowerShell:
+
+```powershell
+cmake -S . -B build-windows-vs2026 -G "Visual Studio 18 2026" -A x64 -DWEBVIEW2_SDK_DIR="$env:WEBVIEW2_SDK_DIR"
 ```
 
 Build:
 
 ```bash
-cmake --build build --config Release
+cmake --build build-windows-vs2026 --config Release
 ```
 
 For development builds:
 
 ```bash
-cmake --build build --config Debug
+cmake --build build-windows-vs2026 --config Debug
 ```
 
 ---
@@ -721,7 +727,7 @@ npm run build
 After compiling the application, the executable should be available under a configuration-specific build directory similar to:
 
 ```text
-build/bin/Release/
+build-windows-vs2026/Release/
 ```
 
 Exact paths may vary depending on the selected CMake generator.
@@ -735,13 +741,13 @@ Exact paths may vary depending on the selected CMake generator.
 Example:
 
 ```bash
-ctest --test-dir build -C Release
+ctest --test-dir build-windows-vs2026 -C Release --output-on-failure
 ```
 
 Or:
 
 ```bash
-cmake --build build --target test
+ctest --preset windows-vs2026-release
 ```
 
 ---
@@ -1186,8 +1192,8 @@ Contributions should follow the existing architecture and engineering standards.
 Before submitting changes:
 
 ```bash
-cmake --build build --config Release
-ctest --test-dir build -C Release
+cmake --build build-windows-vs2026 --config Release
+ctest --test-dir build-windows-vs2026 -C Release --output-on-failure
 ```
 
 For frontend changes:
