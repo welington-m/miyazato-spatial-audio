@@ -1321,3 +1321,19 @@ Official application branding is stored in `assets/branding/`. This directory is
 `npm run dev` and `npm run build` in `apps/desktop/ui` automatically synchronize official assets to the ignored `public/branding/` directory and generate CSS variables from `brand/brand-tokens.json`. Vite includes these copies in `dist/`; the existing WebView2 host serves them with the bundled UI. Run `npm run branding:sync` after editing source assets during a development session, or restart Vite.
 
 The Windows executable embeds `icons/miyazato-spatial-engine.ico` through `apps/desktop/native/app.rc`. CMake creates a build-local copy for portable resource paths. `SplashScreen` is an optional reusable component; no startup delay was added.
+
+## Distribution
+
+Windows installer output: `dist/windows/installer/`
+
+Portable ZIP output: `dist/windows/portable/`
+
+Build on Windows with the existing VS2026/v145 toolchain and Inno Setup 6.3+:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build-installer-windows.ps1
+```
+
+See [Windows installer documentation](docs/windows-installer.md) for prerequisites,
+staging inventory, online runtime installation, signing preparation and clean-machine
+validation. Windows installer build and installation validation remain pending.

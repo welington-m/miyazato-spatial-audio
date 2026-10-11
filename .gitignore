@@ -14,3 +14,7 @@ dist/
 /build-windows-vs2026/
 /build-windows-vs2022/
 /build-linux/
+
+# Downloaded Microsoft prerequisite installers.
+/installer/windows/prerequisites/*.exe
+/installer/windows/prerequisites/*.download
