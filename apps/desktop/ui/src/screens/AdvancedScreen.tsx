@@ -1,3 +1,4 @@
+import HelpTooltip from "../components/ui/HelpTooltip";
 import type { Profile } from "../profile";
 import { Slider } from "../components";
 
@@ -12,17 +13,21 @@ export default function AdvancedScreen({
     <section className="panel">
       <div className="section-heading">
         <h2>Dynamics · Expert controls</h2>
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={p.compressorEnabled}
-            onChange={(e) => patch({ compressorEnabled: e.target.checked })}
-          />
-          Compressor enabled
-        </label>
+        <div className="help-label">
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={p.compressorEnabled}
+              onChange={(e) => patch({ compressorEnabled: e.target.checked })}
+            />
+            Compressor enabled
+          </label>
+          <HelpTooltip help="compressor" />
+        </div>
       </div>
       <div className="advanced-grid">
         <Slider
+          help="Threshold"
           label="Threshold"
           min={-60}
           max={0}
@@ -31,6 +36,7 @@ export default function AdvancedScreen({
           onChange={(thresholdDb) => patch({ thresholdDb })}
         />
         <Slider
+          help="Ratio"
           label="Ratio"
           min={1}
           max={20}
@@ -39,6 +45,7 @@ export default function AdvancedScreen({
           onChange={(ratio) => patch({ ratio })}
         />
         <Slider
+          help="Attack"
           label="Attack"
           min={0.1}
           max={200}
@@ -47,6 +54,7 @@ export default function AdvancedScreen({
           onChange={(attackMs) => patch({ attackMs })}
         />
         <Slider
+          help="Release"
           label="Release"
           min={10}
           max={2000}
@@ -55,6 +63,7 @@ export default function AdvancedScreen({
           onChange={(releaseMs) => patch({ releaseMs })}
         />
         <Slider
+          help="Makeup"
           label="Makeup"
           max={12}
           unit=" dB"
@@ -62,6 +71,7 @@ export default function AdvancedScreen({
           onChange={(makeupDb) => patch({ makeupDb })}
         />
         <Slider
+          help="Input headroom"
           label="Input headroom"
           min={-24}
           max={0}
@@ -70,6 +80,7 @@ export default function AdvancedScreen({
           onChange={(preampDb) => patch({ preampDb })}
         />
         <Slider
+          help="Output gain"
           label="Output gain"
           min={-24}
           max={6}
@@ -79,7 +90,10 @@ export default function AdvancedScreen({
         />
       </div>
       <p>
-        Final stereo-linked sample-peak limiter · ceiling 0.98 (−0.18 dBFS).
+        <span className="help-label">
+          Limiter <HelpTooltip help="limiter" />
+        </span>{" "}
+        · Final stereo-linked sample-peak limiter · ceiling 0.98 (−0.18 dBFS).
         True peak oversampling and loudness-matched A/B are not implemented.
         Bypass uses a fixed −6 dB reference and retains output protection.
       </p>

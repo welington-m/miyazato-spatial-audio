@@ -1,3 +1,6 @@
+import HelpTooltip from "../components/ui/HelpTooltip";
+import type { AudioHelpKey } from "../content/audioHelp";
+import { audioHelp } from "../content/audioHelp";
 import type { Profile } from "../profile";
 import { Slider } from "../components";
 import { SpatialVisualizer } from "../components";
@@ -18,6 +21,7 @@ export default function SpatialScreen({
           This view previews the planned layout.
         </p>
         <Slider
+          help="stereoWidth"
           label="Stereo width"
           max={200}
           value={p.width}
@@ -25,6 +29,7 @@ export default function SpatialScreen({
           onChange={(width) => patch({ width })}
         />
         <Slider
+          help="crossfeed"
           label="Basic crossfeed"
           value={p.crossfeed}
           onChange={(crossfeed) => patch({ crossfeed })}
@@ -33,6 +38,26 @@ export default function SpatialScreen({
           Crossfeed currently mixes L/R directly; frequency-dependent crossfeed
           is pending.
         </small>
+        <div className="planned-help" aria-label="Planned spatial features">
+          {(
+            [
+              "intensity",
+              "room",
+              "front",
+              "rear",
+              "height",
+              "center",
+              "hrtf",
+              "surround",
+              "upmix",
+            ] as AudioHelpKey[]
+          ).map((key) => (
+            <span className="help-label" key={key}>
+              {audioHelp[key].title}
+              <HelpTooltip help={key} />
+            </span>
+          ))}
+        </div>
       </div>
       <SpatialVisualizer />
     </section>

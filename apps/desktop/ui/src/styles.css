@@ -1496,3 +1496,91 @@ select {
   padding: 16px;
   color: var(--mse-text-muted);
 }
+
+/* Contextual help is portaled above cards and constrained to the viewport. */
+.help-trigger {
+  display: inline-flex;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  color: var(--mse-text-muted);
+  border: 0;
+  background: transparent;
+  border-radius: 50%;
+}
+.help-trigger:hover,
+.help-trigger[aria-expanded="true"] {
+  color: var(--mse-accent);
+  background: #ffffff0b;
+}
+.help-trigger:focus-visible {
+  outline: 2px solid var(--mse-accent);
+}
+.help-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.help-popover {
+  position: fixed;
+  z-index: 1000;
+  width: 310px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid #ffffff24;
+  border-radius: 12px;
+  background: #202322;
+  color: var(--mse-text-primary);
+  box-shadow: 0 12px 36px #0008;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.help-popover > strong {
+  display: block;
+  font-size: 14px;
+  color: #f5f7f5;
+}
+.help-popover > span {
+  color: var(--mse-accent);
+  font-size: 12px;
+}
+.help-popover p {
+  color: #b6bdb8;
+  margin: 6px 0 12px;
+}
+.help-popover p:last-child {
+  margin-bottom: 0;
+}
+.mode-choice {
+  position: relative;
+  min-width: 0;
+}
+.mode-choice .mode-card {
+  width: 100%;
+  height: 100%;
+}
+.mode-choice > .help-trigger {
+  position: absolute;
+  top: 8px;
+  right: 24px;
+}
+.planned-help {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 18px;
+}
+.band-editor .band-field {
+  line-height: 1.5;
+  color: var(--mse-text-muted);
+  font-size: var(--font-size-body);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}

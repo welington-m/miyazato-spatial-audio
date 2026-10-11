@@ -1,3 +1,5 @@
+import { audioHelp } from "./content/audioHelp";
+import HelpTooltip from "./components/ui/HelpTooltip";
 import { useRef, useState, useMemo } from "react";
 import type { Band } from "./profile";
 const width = 1000,
@@ -214,9 +216,10 @@ export default function EQGraph({
         ))}
       </div>
       <div className="band-editor">
-        <label>
+        <div className="band-field">
           Band
           <select
+            aria-label="Band"
             value={selected}
             onChange={(e) => setSelected(Number(e.target.value))}
           >
@@ -226,9 +229,11 @@ export default function EQGraph({
               </option>
             ))}
           </select>
-        </label>
-        <label>
-          Frequency
+        </div>
+        <div className="band-field">
+          <span className="help-label">
+            Frequency <HelpTooltip help="frequency" />
+          </span>
           <input
             aria-label="Band frequency"
             type="number"
@@ -244,9 +249,11 @@ export default function EQGraph({
               })
             }
           />
-        </label>
-        <label>
-          Gain dB
+        </div>
+        <div className="band-field">
+          <span className="help-label">
+            Gain dB <HelpTooltip help="gain" />
+          </span>
           <input
             aria-label="Band gain"
             type="number"
@@ -260,9 +267,11 @@ export default function EQGraph({
               })
             }
           />
-        </label>
-        <label>
-          Q
+        </div>
+        <div className="band-field">
+          <span className="help-label">
+            Q <HelpTooltip help="q" />
+          </span>
           <input
             aria-label="Band Q"
             type="number"
@@ -276,10 +285,13 @@ export default function EQGraph({
               })
             }
           />
-        </label>
-        <label>
-          Filter
+        </div>
+        <div className="band-field">
+          <span className="help-label">
+            Filter <HelpTooltip help="filter" />
+          </span>
           <select
+            aria-label="Filter type"
             value={bands[selected].type}
             onChange={(e) => update(selected, { type: Number(e.target.value) })}
           >
@@ -291,15 +303,29 @@ export default function EQGraph({
               ),
             )}
           </select>
-        </label>
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={bands[selected].enabled}
-            onChange={(e) => update(selected, { enabled: e.target.checked })}
-          />
-          Enabled
-        </label>
+        </div>
+        <div className="help-label">
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              aria-label="Band enabled"
+              checked={bands[selected].enabled}
+              onChange={(e) => update(selected, { enabled: e.target.checked })}
+            />
+            Enabled
+          </label>
+          <HelpTooltip help="bandEnabled" />
+        </div>
+      </div>
+      <div className="planned-help" aria-label="Filter reference">
+        {(
+          ["peak", "lowShelf", "highShelf", "lowPass", "highPass"] as const
+        ).map((key) => (
+          <span className="help-label" key={key}>
+            {audioHelp[key].title}
+            <HelpTooltip help={key} />
+          </span>
+        ))}
       </div>
     </>
   );

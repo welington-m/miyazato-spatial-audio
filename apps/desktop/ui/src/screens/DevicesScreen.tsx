@@ -1,3 +1,4 @@
+import HelpTooltip from "../components/ui/HelpTooltip";
 import { Headphones } from "lucide-react";
 import { native, post, type Device, type Status } from "../bridge";
 import type { Dispatch, SetStateAction } from "react";
@@ -29,9 +30,13 @@ export default function DevicesScreen({
           on a separate output. Matching stereo float32 sample rates are
           required.
         </p>
-        <label className="source-select">
-          Capture source
+        <div className="source-select">
+          <span className="help-label">
+            <label htmlFor="capture-source">Capture source</label>
+            <HelpTooltip help="source" />
+          </span>
           <select
+            id="capture-source"
             value={settings.sourceId}
             onChange={(e) =>
               setSettings((s) => ({ ...s, sourceId: e.target.value }))
@@ -44,7 +49,12 @@ export default function DevicesScreen({
               </option>
             ))}
           </select>
-        </label>
+        </div>
+        <p className="help-label">
+          Output device <HelpTooltip help="output" />
+          <HelpTooltip help="sampleRate" />
+          <HelpTooltip help="channels" />
+        </p>
         <div className="device-list">
           {devices.map((d) => (
             <button

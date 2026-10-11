@@ -1,4 +1,6 @@
-import { useEffect, useRef } from "react";
+import HelpTooltip from "./components/ui/HelpTooltip";
+import type { AudioHelpKey } from "./content/audioHelp";
+import { useEffect, useRef, useId } from "react";
 import type { Analyzer } from "./bridge";
 export function Slider({
   label,
@@ -7,7 +9,9 @@ export function Slider({
   max = 100,
   unit = "",
   onChange,
+  help,
 }: {
+  help?: AudioHelpKey;
   label: string;
   value: number;
   min?: number;
@@ -15,16 +19,21 @@ export function Slider({
   unit?: string;
   onChange: (value: number) => void;
 }) {
+  const id = useId();
   return (
-    <label className="slider">
+    <div className="slider">
       <span>
-        {label}
+        <span className="help-label">
+          <label htmlFor={id}>{label}</label>
+          {help && <HelpTooltip help={help} />}
+        </span>
         <strong>
           {value.toFixed(value % 1 ? 1 : 0)}
           <small>{unit}</small>
         </strong>
       </span>
       <input
+        id={id}
         aria-label={label}
         type="range"
         min={min}
@@ -33,7 +42,7 @@ export function Slider({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       />
-    </label>
+    </div>
   );
 }
 export function Meter({ label, value }: { label: string; value: number }) {

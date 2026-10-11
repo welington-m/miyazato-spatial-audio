@@ -1,3 +1,4 @@
+import HelpTooltip from "./components/ui/HelpTooltip";
 import BrandLogo from "./BrandLogo";
 import { branding } from "./config/branding";
 import { useRef, useState } from "react";
@@ -75,6 +76,7 @@ export default function App() {
   const quick = (
     <div className="quick-grid">
       <Slider
+        help="stereoWidth"
         label="Stereo width"
         value={p.width}
         max={200}
@@ -82,17 +84,21 @@ export default function App() {
         onChange={(width) => patch({ width })}
       />
       <Slider
+        help="bass"
         label="Bass"
         value={p.bass}
         onChange={(bass) => patch({ bass })}
       />
       <Slider
+        help="clarity"
         label="Clarity"
         value={p.clarity}
         onChange={(clarity) => patch({ clarity })}
       />
       <div className="pending-control">
-        <span>Spatial / Immersion</span>
+        <span className="help-label">
+          Spatial / Immersion <HelpTooltip help="spatial" />
+        </span>
         <strong>Phase 2</strong>
         <small>HRTF & room modeling · bypass</small>
       </div>
@@ -221,6 +227,7 @@ export default function App() {
               >
                 BYPASS
               </button>
+              <HelpTooltip help="bypass" />
             </div>
           </div>
           {!native && (
@@ -326,17 +333,24 @@ export default function App() {
             {device
               ? `${device.sampleRate / 1000} kHz · 32-bit float DSP · ${device.channels} ch`
               : "No active audio format"}
+            <HelpTooltip help="sampleRate" />
+            <HelpTooltip help="channels" />
           </span>
           <span>
             Buffer {status.running ? `${status.bufferMs.toFixed(1)} ms` : "—"}
+            <HelpTooltip help="buffer" />
+            <HelpTooltip help="latency" />
           </span>
           <span>
             Callback{" "}
             {status.running ? `${status.callbackMs.toFixed(2)} ms` : "—"}
+            <HelpTooltip help="callback" />
           </span>
           <span>
-            Glitches {status.glitches} · Underruns {status.underruns} · Overruns{" "}
-            {status.overruns}
+            Glitches {status.glitches}
+            <HelpTooltip help="glitches" /> · Underruns {status.underruns}
+            <HelpTooltip help="underruns" /> · Overruns {status.overruns}
+            <HelpTooltip help="overruns" />
           </span>
         </footer>
       </div>

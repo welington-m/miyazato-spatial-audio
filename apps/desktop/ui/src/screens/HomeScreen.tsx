@@ -1,3 +1,5 @@
+import HelpTooltip from "../components/ui/HelpTooltip";
+import type { AudioHelpKey } from "../content/audioHelp";
 import {
   Activity,
   ArrowUpRight,
@@ -84,7 +86,9 @@ export default function HomeScreen({
               </strong>
             </div>
             <div>
-              <small>LIMITER GR</small>
+              <small>
+                LIMITER GR <HelpTooltip help="limiter" />
+              </small>
               <strong>
                 {analyzer ? `${analyzer.reductionDb.toFixed(1)} dB` : "—"}
               </strong>
@@ -104,19 +108,22 @@ export default function HomeScreen({
           {modes.map((mode, i) => {
             const Icon = icons[i];
             return (
-              <button
-                className={`mode-card ${p.category === mode ? "selected" : ""}`}
-                key={mode}
-                onClick={() => choose(mode)}
-                aria-pressed={p.category === mode}
-              >
-                <span className="mode-icon">
-                  <Icon size={23} />
-                </span>
-                <strong>{mode === "Movie" ? "Movies" : mode}</strong>
-                <small>{descriptions[i]}</small>
-                <span className="mode-indicator" />
-              </button>
+              <div className="mode-choice" key={mode}>
+                <button
+                  className={`mode-card ${p.category === mode ? "selected" : ""}`}
+                  key={mode}
+                  onClick={() => choose(mode)}
+                  aria-pressed={p.category === mode}
+                >
+                  <span className="mode-icon">
+                    <Icon size={23} />
+                  </span>
+                  <strong>{mode === "Movie" ? "Movies" : mode}</strong>
+                  <small>{descriptions[i]}</small>
+                  <span className="mode-indicator" />
+                </button>
+                <HelpTooltip help={`mode${mode}` as AudioHelpKey} />
+              </div>
             );
           })}
         </div>
