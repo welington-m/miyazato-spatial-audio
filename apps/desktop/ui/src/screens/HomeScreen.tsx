@@ -27,12 +27,14 @@ import {
   type Mode,
   type Settings,
 } from "../profile";
-import { Meter, Spectrum, Orb } from "../components";
+import SpectrumAnalyzer from "../components/audio/SpectrumAnalyzer";
+import { Meter, Orb } from "../components";
 const icons = [Music2, Clapperboard, Gamepad2, Crosshair, Mic, Radio, Wand2];
 
 export default function HomeScreen({
   p,
   analyzer,
+  running,
   settings,
   variant,
   choose,
@@ -40,6 +42,7 @@ export default function HomeScreen({
 }: {
   p: Profile;
   analyzer: Analyzer | null;
+  running: boolean;
   settings: Settings;
   variant: string;
   choose: (mode: Mode, variant?: string) => void;
@@ -75,7 +78,7 @@ export default function HomeScreen({
             <span>{t("home.signal")}</span>
             <ArrowUpRight size={16} />
           </div>
-          <Spectrum analyzer={analyzer} mock={!native} />
+          <SpectrumAnalyzer running={running} nativeAvailable={native} />
           <div className="meters">
             <Meter label="L" value={analyzer?.peakL || 0} />
             <Meter label="R" value={analyzer?.peakR || 0} />

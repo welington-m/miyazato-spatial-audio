@@ -10,6 +10,9 @@ export interface AudioHelpEntry {
 
 // Stable frontend help identifiers map to semantic locale namespaces.
 export const audioHelp = {
+  spectrum: "spectrum",
+  fft: "fft",
+  dbfs: "dbfs",
   stereoWidth: "stereoWidth",
   bass: "bass",
   clarity: "clarity",

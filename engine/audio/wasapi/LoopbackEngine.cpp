@@ -75,6 +75,7 @@ void LoopbackEngine::stop() {
         worker_.request_stop();
         worker_.join();
     }
+    spectrum_.stop();
     running_ = false;
     accepting_ = false;
 }
@@ -134,6 +135,7 @@ void LoopbackEngine::run(std::stop_token token, std::wstring source, std::wstrin
         check(render->GetService(IID_PPV_ARGS(&out)), "Render service");
         const auto block = std::max(captureSize, renderSize);
         chain_.prepare(cf->nSamplesPerSec, 2, block);
+        (void)spectrum_.start(cf->nSamplesPerSec);
         AudioBuffer buffer;
         buffer.prepare(2, block);
         // A bounded frame FIFO absorbs endpoint scheduling skew; long-running clock drift is a
@@ -182,6 +184,8 @@ void LoopbackEngine::run(std::stop_token token, std::wstring source, std::wstrin
                         std::memcpy(view.samples.data(), data, frames * 2 * sizeof(float));
                     check(in->ReleaseBuffer(frames), "Capture release");
                     chain_.process(view);
+                    // Read-only post-limiter observation. Overflow/failure never waits or interrupts output.
+                    spectrum_.tap(view.samples, view.channels);
                     if (queued + frames > capacity) {
                         ++overruns_;
                         read = write;
@@ -225,6 +229,7 @@ void LoopbackEngine::run(std::stop_token token, std::wstring source, std::wstrin
         std::lock_guard lock(errorMutex_);
         error_ = error.what();
     }
+    spectrum_.stop();
     running_ = false;
     accepting_ = false;
 }

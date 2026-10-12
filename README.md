@@ -1309,9 +1309,10 @@ A base executável está em `apps/desktop/`, com DSP C++23 portátil em `engine/
 - [Entrega e arquivos principais](docs/first-iteration.md)
 - [Compilar e executar no Windows](docs/build-windows.md)
 - [Arquitetura](docs/architecture.md) · [Engine](docs/audio-engine.md) · [DSP](docs/dsp-pipeline.md) · [UI](docs/ui-design.md)
+- [Analisador FFT e validação](docs/spectrum-analyzer.md)
 - [Funcionalidades prontas e pendentes](docs/roadmap.md) · [Licenças](docs/third-party.md)
 
-O núcleo DSP e a UI podem ser compilados e testados no Linux. WebView2/WASAPI exigem Windows; nesta execução não foram compilados nem executados no Windows. Spectrum é Mock e HRTF/surround são Bypass. A rota WASAPI é um Prototype entre endpoints distintos, não interceptação transparente do áudio do sistema.
+O núcleo DSP e a UI podem ser compilados e testados no Linux. WebView2/WASAPI exigem Windows; nesta execução não foram compilados nem executados no Windows. O espectro usa FFT nativa e Canvas quando há dados reais; a prévia ilustrativa é mantida como fallback. A integração e os testes de áudio no Windows continuam pendentes. HRTF/surround são Bypass. A rota WASAPI é um Prototype entre endpoints distintos, não interceptação transparente do áudio do sistema.
 
 
 ## Brand Assets

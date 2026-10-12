@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/dsp/Dsp.h"
+#include "engine/dsp/analyzer/SpectrumAnalyzer.h"
 #include <atomic>
 #include <mutex>
 #include <string>
@@ -15,6 +16,7 @@ struct EngineStatus {
 // Only equal-rate stereo float shared-mode endpoints are supported in this iteration.
 class LoopbackEngine {
     DSPChain chain_;
+    SpectrumAnalyzer spectrum_;
     Profile desired_{defaultProfile()};
     std::atomic<bool> accepting_{};
     std::jthread worker_;
@@ -36,6 +38,8 @@ class LoopbackEngine {
         return !accepting_.load() || chain_.submit(p);
     }
     bool snapshot(AnalyzerSnapshot &s) noexcept { return chain_.snapshot(s); }
+    bool spectrum(SpectrumFrame &frame) noexcept { return spectrum_.snapshot(frame); }
+    bool spectrumAvailable() const noexcept { return spectrum_.available(); }
     EngineStatus status() const;
 };
 } // namespace miyazato::windows

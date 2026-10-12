@@ -2,6 +2,7 @@
 #include "engine/audio/wasapi/LoopbackEngine.h"
 #include "resource.h"
 #include <WebView2.h>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -198,6 +199,39 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                   {"rmsR", last.rmsR},
                   {"reductionDb", last.reductionDb},
                   {"waveform", last.waveform}});
+        // Optional analyzer telemetry uses the existing UI timer, never the audio callback.
+        // Serialization/bridge failure is contained without stopping the audio route.
+        try {
+            miyazato::SpectrumFrame frame, latest;
+            bool hasSpectrum = false;
+            while (engine.spectrum(frame)) {
+                latest = frame;
+                hasSpectrum = true;
+            }
+            const auto now =
+                static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                          std::chrono::steady_clock::now().time_since_epoch())
+                                          .count());
+            if (s.running && engine.spectrumAvailable() && hasSpectrum && latest.timestamp <= now &&
+                now - latest.timestamp <= 1000)
+                send({{"type", "spectrum"},
+                      {"sequence", latest.sequence},
+                      {"timestamp", latest.timestamp},
+                      {"fftSize", latest.fftSize},
+                      {"sampleRate", latest.sampleRate},
+                      {"minFrequency", latest.minFrequency},
+                      {"maxFrequency", latest.maxFrequency},
+                      {"floorDb", latest.floorDb},
+                      {"bins", latest.bins},
+                      {"computeMs", latest.computeMs},
+                      {"updatesPerSecond", latest.updatesPerSecond},
+                      {"droppedBlocks", latest.droppedBlocks},
+                      {"droppedFrames", latest.droppedFrames}});
+            else if (!s.running || !engine.spectrumAvailable())
+                send({{"type", "spectrum.status"}, {"available", false}, {"paused", !s.running}});
+        } catch (...) {
+            // UI expires stale frames; analyzer delivery is strictly best-effort.
+        }
         return 0;
     }
     case WM_CLOSE:

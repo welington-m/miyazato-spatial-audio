@@ -263,6 +263,7 @@ export default function App() {
               <HomeScreen
                 p={p}
                 analyzer={analyzer}
+                running={status.running}
                 settings={settings}
                 variant={variant}
                 choose={choose}

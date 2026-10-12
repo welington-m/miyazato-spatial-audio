@@ -15,6 +15,20 @@ export interface Analyzer {
   reductionDb: number;
   waveform: number[];
 }
+export interface SpectrumFrame {
+  sequence: number;
+  timestamp: number;
+  fftSize: number;
+  sampleRate: number;
+  minFrequency: number;
+  maxFrequency: number;
+  floorDb: number;
+  bins: number[];
+  computeMs: number;
+  updatesPerSecond: number;
+  droppedBlocks: number;
+  droppedFrames: number;
+}
 export interface Status {
   sourceId: string;
   outputId: string;
@@ -27,6 +41,8 @@ export interface Status {
   error: string;
 }
 export type HostEvent =
+  | ({ type: "spectrum" } & SpectrumFrame)
+  | { type: "spectrum.status"; available: boolean; paused: boolean }
   | { type: "devices"; devices: Device[] }
   | { type: "settings"; value: unknown }
   | ({ type: "status" } & Status)

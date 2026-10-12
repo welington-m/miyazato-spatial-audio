@@ -21,6 +21,6 @@ A/B stores two full UI parameter states and submits transitions. Global power an
 
 ## Analyzer
 
-Real: output peak/RMS per L/R, sample-peak limiter gain reduction, 128-point decimated block waveform snapshots up to 30 Hz. Values describe the latest block at publication, not a continuously accumulated 30 Hz window. UI uses these peak/RMS meters and orb amplitude. The spectrum is a labeled static **Mock**; the decimated waveform cannot be used to derive a truthful full-band FFT. Integrate a raw-sample SPSC feed and FFT worker before replacing the mock.
+Real: output peak/RMS per L/R, sample-peak limiter gain reduction, 128-point decimated block waveform snapshots up to 30 Hz. Values describe the latest block at publication, not a continuously accumulated 30 Hz window. UI uses these peak/RMS meters and orb amplitude. A passive post-limiter raw-sample SPSC feed now drives an independent 2048-point Hann FFT worker and 64 logarithmic canvas bars. The decimated waveform is not FFT input. Browser/awaiting-data fallback remains labeled illustrative; LIVE requires a valid native spectrum frame. See [spectrum-analyzer.md](spectrum-analyzer.md) for normalization and pending Windows integration/listening validation.
 
 Core accepts sample rates 8–192 kHz and 1–16 channels for future adapters. Tests cover 44.1, 48 and 96 kHz EQ; multichannel transport, channel maps, 192 kHz quality and SIMD benchmarks are pending. No measurable SIMD optimization is claimed.

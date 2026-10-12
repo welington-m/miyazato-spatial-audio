@@ -2,7 +2,6 @@ import { useI18n } from "./i18n";
 import HelpTooltip from "./components/ui/HelpTooltip";
 import type { AudioHelpKey } from "./content/audioHelp";
 import { useEffect, useRef, useId } from "react";
-import type { Analyzer } from "./bridge";
 export function Slider({
   label,
   value,
@@ -65,46 +64,6 @@ export function Meter({ label, value }: { label: string; value: number }) {
         {value > 0
           ? `${number(Math.max(-60, 20 * Math.log10(value)), 1)} dB`
           : "−∞"}
-      </small>
-    </div>
-  );
-}
-export function Spectrum({
-  analyzer,
-  mock,
-}: {
-  analyzer: Analyzer | null;
-  mock: boolean;
-}) {
-  const { t } = useI18n();
-  // Mock spectrum is static and explicitly identified. Real FFT is not inferred from decimated waveform.
-  const heights = Array.from({ length: 64 }, (_, i) =>
-    Math.max(6, (Math.sin(i * 0.23) * 0.25 + 0.45) * Math.exp(-i / 95) * 100),
-  );
-  return (
-    <div className="spectrum-panel">
-      <div className="section-label">
-        {t("spectrum.title")}{" "}
-        <span className="badge">{t("spectrum.pending")}</span>
-      </div>
-      <div className="spectrum" aria-label={t("spectrum.aria")}>
-        {heights.map((h, i) => (
-          <i key={i} style={{ height: `${h}%` }} />
-        ))}
-      </div>
-      <div className="frequency-labels">
-        <span>20 Hz</span>
-        <span>100</span>
-        <span>1k</span>
-        <span>10k</span>
-        <span>20k Hz</span>
-      </div>
-      <small>
-        {mock
-          ? t("spectrum.preview")
-          : analyzer
-            ? t("spectrum.live")
-            : t("spectrum.stopped")}
       </small>
     </div>
   );

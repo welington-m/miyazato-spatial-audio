@@ -1666,3 +1666,56 @@ html[lang="ja"] .nav-item {
   gap: 8px;
   padding-inline: 10px;
 }
+
+.spectrum-stage {
+  position: relative;
+  height: 112px;
+  margin-top: 17px;
+  border-bottom: 1px solid #ffffff12;
+}
+.spectrum-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.spectrum-canvas[hidden] {
+  display: none;
+}
+.spectrum-fallback {
+  height: 100%;
+  margin: 0;
+  border-bottom: 0;
+}
+.spectrum-frequency-labels {
+  position: relative;
+  height: 20px;
+  margin: 12px 0;
+  font-size: var(--font-size-meta);
+  color: var(--mse-text-muted);
+}
+.spectrum-frequency-labels > span {
+  position: absolute;
+  white-space: nowrap;
+}
+.spectrum-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.spectrum-info > small {
+  color: var(--mse-text-muted);
+  font-size: var(--font-size-meta);
+}
+.spectrum-info .help-label {
+  font-size: var(--font-size-caption);
+  color: var(--mse-text-muted);
+}
+/* Stagger the crowded high-frequency labels while retaining their exact log positions. */
+.spectrum-frequency-labels {
+  height: 34px;
+}
+.spectrum-frequency-labels > span[data-frequency="10000"] {
+  top: 15px;
+}

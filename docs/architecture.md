@@ -8,7 +8,9 @@ flowchart LR
  Host -->|SPSC profile snapshots| DSP[DSPChain]
  Capture[WASAPI loopback] --> DSP
  DSP --> Render[WASAPI output]
- DSP -->|SPSC reduced snapshots| Host
+ DSP -->|SPSC reduced meter snapshots| Host
+ DSP -->|post-limiter sample SPSC| FFT[Native FFT worker]
+ FFT -->|bounded spectrum frames| Host
  Host -->|WebView2 events| UI
  Host --> Disk[AppData settings]
 ```
@@ -17,16 +19,19 @@ flowchart LR
 
 - Main/UI control thread: WebView2, JSON, device listing, settings files, parameter queue producer and analyzer queue consumer.
 - Dedicated audio worker: MTA COM, event wait, WASAPI capture/render, DSP, parameter queue consumer and analyzer queue producer.
-- Browser compositor handles decorative CSS animations. There is no separate analyzer worker yet: only cheap peak/RMS and decimated waveform snapshots are real.
+- Independent analyzer worker: consumes bounded raw-sample blocks, runs Hann/radix-2 FFT and smoothing, and produces bounded spectrum frames.
+- Browser compositor handles decorative CSS animations; requestAnimationFrame draws native spectrum bins on canvas without FFT work.
 
 Prepare and stop are outside callbacks; start preallocates scratch/FIFO/filter state. Steady-state processing performs no heap allocation, file I/O, JSON, synchronous logging or mutex acquisition. Exceptions occur on WASAPI failures; the worker then unwinds and reports a control-thread-readable error. This is a soft realtime user-mode engine, not a guarantee of Windows scheduling deadlines.
 
-SPSC queues reject rather than overwrite unread data. Control queue capacity is 15 profiles; UI coalesces changes for 25 ms. Analyzer queue holds seven snapshots; host drains to the latest at ~30 Hz. Queue producers must not be called concurrently. `setBypass` is an audio-thread operation; the host uses queued whole profiles instead.
+SPSC queues reject rather than overwrite unread data. Control queue capacity is 15 profiles; UI coalesces changes for 25 ms. Meter snapshot queue holds seven snapshots; host drains to the latest at ~30 Hz. Spectrum sample/frame queues are separate and bounded, as detailed in the analyzer documentation. Queue producers must not be called concurrently. `setBypass` is an audio-thread operation; the host uses queued whole profiles instead.
 
 ## IPC v1
 
 Requests: `devices.list`, `settings.load`, `settings.save {value}`, `profile.set {profile}`, `engine.start {sourceId, outputId}`, `engine.stop`.
-Events: `devices {devices}`, `settings {value}`, `status {sourceId, outputId, running, underruns, overruns, glitches, bufferMs, callbackMs, error}`, `analyzer {peakL, peakR, rmsL, rmsR, reductionDb, waveform}`, `error {message}`. No heavy UI polling: only an inexpensive native telemetry timer posts events.
+Events also include `spectrum` and `spectrum.status` at ~30 Hz; see [spectrum-analyzer.md](spectrum-analyzer.md) for the payload and thread contract.
+
+Existing events: `devices {devices}`, `settings {value}`, `status {sourceId, outputId, running, underruns, overruns, glitches, bufferMs, callbackMs, error}`, `analyzer {peakL, peakR, rmsL, rmsR, reductionDb, waveform}`, `error {message}`. No heavy UI polling: only an inexpensive native telemetry timer posts events.
 
 WebView2 maps bundled UI to `https://miyazato.local`. Host rejects messages from other origins. JSON parsing errors are surfaced. UI settings use version 1 and validate numeric ranges; persistence writes a temporary file then replaces the destination. Profile data is not authoritative DSP code.
 
