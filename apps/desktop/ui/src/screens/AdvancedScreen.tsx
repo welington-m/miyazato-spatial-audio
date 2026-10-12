@@ -1,3 +1,4 @@
+import { useI18n } from "../i18n";
 import HelpTooltip from "../components/ui/HelpTooltip";
 import type { Profile } from "../profile";
 import { Slider } from "../components";
@@ -9,10 +10,11 @@ export default function AdvancedScreen({
   p: Profile;
   patch: (p: Partial<Profile>) => void;
 }) {
+  const { t, number } = useI18n();
   return (
     <section className="panel">
       <div className="section-heading">
-        <h2>Dynamics · Expert controls</h2>
+        <h2>{t("advanced.title")}</h2>
         <div className="help-label">
           <label className="checkbox">
             <input
@@ -20,7 +22,7 @@ export default function AdvancedScreen({
               checked={p.compressorEnabled}
               onChange={(e) => patch({ compressorEnabled: e.target.checked })}
             />
-            Compressor enabled
+            {t("advanced.enabled")}
           </label>
           <HelpTooltip help="compressor" />
         </div>
@@ -28,7 +30,7 @@ export default function AdvancedScreen({
       <div className="advanced-grid">
         <Slider
           help="Threshold"
-          label="Threshold"
+          label={t("controls.threshold")}
           min={-60}
           max={0}
           unit=" dB"
@@ -37,7 +39,7 @@ export default function AdvancedScreen({
         />
         <Slider
           help="Ratio"
-          label="Ratio"
+          label={t("controls.ratio")}
           min={1}
           max={20}
           unit=":1"
@@ -46,7 +48,7 @@ export default function AdvancedScreen({
         />
         <Slider
           help="Attack"
-          label="Attack"
+          label={t("controls.attack")}
           min={0.1}
           max={200}
           unit=" ms"
@@ -55,7 +57,7 @@ export default function AdvancedScreen({
         />
         <Slider
           help="Release"
-          label="Release"
+          label={t("controls.release")}
           min={10}
           max={2000}
           unit=" ms"
@@ -64,7 +66,7 @@ export default function AdvancedScreen({
         />
         <Slider
           help="Makeup"
-          label="Makeup"
+          label={t("controls.makeup")}
           max={12}
           unit=" dB"
           value={p.makeupDb}
@@ -72,7 +74,7 @@ export default function AdvancedScreen({
         />
         <Slider
           help="Input headroom"
-          label="Input headroom"
+          label={t("controls.headroom")}
           min={-24}
           max={0}
           unit=" dB"
@@ -81,7 +83,7 @@ export default function AdvancedScreen({
         />
         <Slider
           help="Output gain"
-          label="Output gain"
+          label={t("controls.output")}
           min={-24}
           max={6}
           unit=" dB"
@@ -91,11 +93,9 @@ export default function AdvancedScreen({
       </div>
       <p>
         <span className="help-label">
-          Limiter <HelpTooltip help="limiter" />
+          {t("advanced.limiter")} <HelpTooltip help="limiter" />
         </span>{" "}
-        · Final stereo-linked sample-peak limiter · ceiling 0.98 (−0.18 dBFS).
-        True peak oversampling and loudness-matched A/B are not implemented.
-        Bypass uses a fixed −6 dB reference and retains output protection.
+        · {t("advanced.note")}
       </p>
     </section>
   );

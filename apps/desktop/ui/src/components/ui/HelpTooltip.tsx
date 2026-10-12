@@ -1,8 +1,9 @@
+import { useI18n } from "../../i18n";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CircleHelp } from "lucide-react";
 import {
-  audioHelp,
+  helpKey,
   type AudioHelpKey,
   type AudioHelpEntry,
 } from "../../content/audioHelp";
@@ -40,8 +41,17 @@ export default function HelpTooltip({
   help?: AudioHelpKey;
   entry?: AudioHelpEntry;
 }) {
+  const { t, language } = useI18n();
   const content: AudioHelpEntry | undefined =
-    entry ?? (help ? audioHelp[help] : undefined);
+    entry ??
+    (help
+      ? {
+          title: t(helpKey(help, "title")),
+          description: t(helpKey(help, "description")),
+          usage: t(helpKey(help, "usage")),
+          warning: t(helpKey(help, "warning")),
+        }
+      : undefined);
   const id = useId();
   const button = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
@@ -103,7 +113,15 @@ export default function HelpTooltip({
       window.removeEventListener("resize", reposition);
       window.removeEventListener("scroll", reposition, true);
     };
-  }, [open, pinned, content]);
+  }, [
+    open,
+    pinned,
+    language,
+    content?.title,
+    content?.description,
+    content?.usage,
+    content?.warning,
+  ]);
   if (!content) return null;
   return (
     <>
@@ -111,7 +129,7 @@ export default function HelpTooltip({
         ref={button}
         type="button"
         className="help-trigger"
-        aria-label={`Help: ${content.title}`}
+        aria-label={t("help.label", { title: content.title })}
         aria-describedby={open ? id : undefined}
         aria-expanded={pinned}
         aria-controls={pinned ? id : undefined}
@@ -156,13 +174,13 @@ export default function HelpTooltip({
             <p>{content.description}</p>
             {content.usage && (
               <>
-                <span>Best for</span>
+                <span>{t("help.bestFor")}</span>
                 <p>{content.usage}</p>
               </>
             )}
             {content.warning && (
               <>
-                <span>Note</span>
+                <span>{t("help.note")}</span>
                 <p>{content.warning}</p>
               </>
             )}

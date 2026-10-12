@@ -1,3 +1,4 @@
+import { useI18n } from "../i18n";
 import HelpTooltip from "../components/ui/HelpTooltip";
 import { Headphones } from "lucide-react";
 import { native, post, type Device, type Status } from "../bridge";
@@ -18,21 +19,20 @@ export default function DevicesScreen({
   p: Profile;
   setError: (error: string) => void;
 }) {
+  const { t, number } = useI18n();
   return (
     <>
       <section className="panel">
         <div className="section-heading">
-          <h2>Audio endpoints</h2>
-          <button onClick={() => post("devices.list")}>Refresh devices</button>
+          <h2>{t("devices.title")}</h2>
+          <button onClick={() => post("devices.list")}>
+            {t("devices.refresh")}
+          </button>
         </div>
-        <p>
-          Prototype loopback route: play audio on the source endpoint and listen
-          on a separate output. Matching stereo float32 sample rates are
-          required.
-        </p>
+        <p>{t("devices.description")}</p>
         <div className="source-select">
           <span className="help-label">
-            <label htmlFor="capture-source">Capture source</label>
+            <label htmlFor="capture-source">{t("devices.source")}</label>
             <HelpTooltip help="source" />
           </span>
           <select
@@ -42,7 +42,7 @@ export default function DevicesScreen({
               setSettings((s) => ({ ...s, sourceId: e.target.value }))
             }
           >
-            <option value="">Choose source endpoint</option>
+            <option value="">{t("devices.chooseSource")}</option>
             {devices.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
@@ -51,7 +51,7 @@ export default function DevicesScreen({
           </select>
         </div>
         <p className="help-label">
-          Output device <HelpTooltip help="output" />
+          {t("devices.output")} <HelpTooltip help="output" />
           <HelpTooltip help="sampleRate" />
           <HelpTooltip help="channels" />
         </p>
@@ -66,25 +66,26 @@ export default function DevicesScreen({
               <span>
                 <strong>{d.name}</strong>
                 <small>
-                  {d.channels} ch · {d.sampleRate / 1000} kHz · {d.bits} bit{" "}
-                  {d.floatFormat ? "float" : "PCM"}
+                  {t("common.channels", { count: d.channels })} ·{" "}
+                  {number(d.sampleRate / 1000)} kHz · {number(d.bits)} bit{" "}
+                  {d.floatFormat ? t("common.float") : "PCM"}
                 </small>
               </span>
-              {d.isDefault && <span className="badge">DEFAULT</span>}
+              {d.isDefault && (
+                <span className="badge">{t("devices.default")}</span>
+              )}
               {settings.outputId === d.id && (
-                <span className="badge">SELECTED</span>
+                <span className="badge">{t("devices.selected")}</span>
               )}
               {status.running && status.outputId === d.id && (
-                <span className="badge">ACTIVE</span>
+                <span className="badge">{t("devices.active")}</span>
               )}
             </button>
           ))}
         </div>
         {!devices.length && (
           <p className="empty-state">
-            {native
-              ? "No endpoints found. Refresh to enumerate."
-              : "Device enumeration is available in the Windows desktop host."}
+            {native ? t("devices.empty") : t("devices.nativeOnly")}
           </p>
         )}
         <button
@@ -104,14 +105,10 @@ export default function DevicesScreen({
             post("profile.set", { profile: p });
           }}
         >
-          Start prototype route
+          {t("devices.start")}
         </button>
-        <button onClick={() => post("engine.stop")}>Stop</button>
-        <p className="muted">
-          Device loss stops the route safely and reports an error. Refresh,
-          choose available endpoints and restart. Automatic reconnect is
-          pending.
-        </p>
+        <button onClick={() => post("engine.stop")}>{t("devices.stop")}</button>
+        <p className="muted">{t("devices.lossNote")}</p>
       </section>
     </>
   );

@@ -1,3 +1,10 @@
+import { useI18n } from "../i18n";
+import {
+  modeKeys,
+  modeDescriptionKeys,
+  presetKeys,
+  profileName,
+} from "../i18n/labels";
 import HelpTooltip from "../components/ui/HelpTooltip";
 import type { AudioHelpKey } from "../content/audioHelp";
 import {
@@ -22,15 +29,6 @@ import {
 } from "../profile";
 import { Meter, Spectrum, Orb } from "../components";
 const icons = [Music2, Clapperboard, Gamepad2, Crosshair, Mic, Radio, Wand2];
-const descriptions = [
-  "Every note, beautifully balanced",
-  "A little closer to the big screen",
-  "Get lost in your next world",
-  "Focus on the details that matter",
-  "Clear voices. Better conversations.",
-  "Make everyday listening better",
-  "Sound, on your terms",
-];
 
 export default function HomeScreen({
   p,
@@ -47,28 +45,34 @@ export default function HomeScreen({
   choose: (mode: Mode, variant?: string) => void;
   quick: ReactNode;
 }) {
+  const { t, number } = useI18n();
   return (
     <>
       <section className="hero-grid">
         <div className="hero panel">
           <div className="hero-heading">
-            <span className="section-label">YOUR LISTENING SPACE</span>
+            <span className="section-label">{t("home.listeningSpace")}</span>
             <span className="badge">
-              {p.bypass ? "DSP BYPASS" : "STEREO · FLOAT32"}
+              {p.bypass ? t("home.dspBypass") : t("home.stereoFormat")}
             </span>
           </div>
           <Orb level={analyzer?.rmsL || 0} effects={settings.effects} />
           <div className="hero-bottom">
             <span>
-              <i /> {p.name}
+              <i />{" "}
+              {profileName(
+                p,
+                t,
+                settings.custom.some((saved) => saved.name === p.name),
+              )}
             </span>
-            <span>100 ms parameter transitions</span>
+            <span>{t("home.transitions")}</span>
           </div>
         </div>
         <div className="signal-panel panel">
           <div className="panel-title">
             <Activity size={16} />
-            <span>Signal overview</span>
+            <span>{t("home.signal")}</span>
             <ArrowUpRight size={16} />
           </div>
           <Spectrum analyzer={analyzer} mock={!native} />
@@ -81,16 +85,16 @@ export default function HomeScreen({
               <small>RMS</small>
               <strong>
                 {analyzer
-                  ? `${(20 * Math.log10(Math.max(analyzer.rmsL, 0.000001))).toFixed(1)} dB`
+                  ? `${number(20 * Math.log10(Math.max(analyzer.rmsL, 0.000001)), 1)} dB`
                   : "—"}
               </strong>
             </div>
             <div>
               <small>
-                LIMITER GR <HelpTooltip help="limiter" />
+                {t("home.limiterReduction")} <HelpTooltip help="limiter" />
               </small>
               <strong>
-                {analyzer ? `${analyzer.reductionDb.toFixed(1)} dB` : "—"}
+                {analyzer ? `${number(analyzer.reductionDb, 1)} dB` : "—"}
               </strong>
             </div>
           </div>
@@ -99,10 +103,10 @@ export default function HomeScreen({
       <section className="mode-section">
         <div className="section-heading">
           <div>
-            <h2>What are you listening to?</h2>
-            <p>A starting point for every kind of moment.</p>
+            <h2>{t("home.question")}</h2>
+            <p>{t("home.startingPoint")}</p>
           </div>
-          <span className="muted">SELECT YOUR AUDIO MODE</span>
+          <span className="muted">{t("home.selectMode")}</span>
         </div>
         <div className="mode-grid">
           {modes.map((mode, i) => {
@@ -118,8 +122,8 @@ export default function HomeScreen({
                   <span className="mode-icon">
                     <Icon size={23} />
                   </span>
-                  <strong>{mode === "Movie" ? "Movies" : mode}</strong>
-                  <small>{descriptions[i]}</small>
+                  <strong>{t(modeKeys[mode])}</strong>
+                  <small>{t(modeDescriptionKeys[mode])}</small>
                   <span className="mode-indicator" />
                 </button>
                 <HelpTooltip help={`mode${mode}` as AudioHelpKey} />
@@ -128,7 +132,7 @@ export default function HomeScreen({
           })}
         </div>
         <div className="preset-strip">
-          <span>LISTENING PRESET</span>
+          <span>{t("home.preset")}</span>
           <div className="preset-tabs">
             {variants[p.category].map((v) => (
               <button
@@ -136,7 +140,7 @@ export default function HomeScreen({
                 className={variant === v ? "selected" : ""}
                 onClick={() => choose(p.category, v)}
               >
-                {v}
+                {t(presetKeys[v])}
               </button>
             ))}
           </div>
@@ -144,8 +148,8 @@ export default function HomeScreen({
       </section>
       <section className="panel quick-panel">
         <div className="section-heading">
-          <h2>Make it feel right.</h2>
-          <span className="badge">QUICK CONTROLS</span>
+          <h2>{t("home.quickTitle")}</h2>
+          <span className="badge">{t("home.quickControls")}</span>
         </div>
         {quick}
       </section>

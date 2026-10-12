@@ -1584,3 +1584,85 @@ select {
   flex-direction: column;
   gap: 9px;
 }
+
+/* Longer locale labels wrap without reducing the shared typography. */
+:root {
+  font-family:
+    Inter, "Segoe UI", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+}
+.nav-item {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.nav-item svg {
+  flex-shrink: 0;
+}
+.sidebar-bottom,
+.engine-chip {
+  min-width: 0;
+}
+.engine-chip {
+  white-space: normal;
+}
+.mode-card strong,
+.mode-card small {
+  overflow-wrap: anywhere;
+}
+.quick-grid > *,
+.advanced-grid > *,
+.spatial-content > * {
+  min-width: 0;
+}
+.slider > span {
+  flex-wrap: wrap;
+}
+.help-label {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.help-popover {
+  width: 340px;
+  overflow-wrap: anywhere;
+}
+.preset-strip {
+  flex-wrap: wrap;
+}
+.preset-tabs {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+footer > span {
+  white-space: normal;
+}
+.band-editor .band-field {
+  min-width: 0;
+}
+.band-editor .band-field .help-label {
+  max-width: 180px;
+}
+.language-setting {
+  margin: 24px 0;
+}
+.language-setting > label {
+  display: block;
+  margin-bottom: 10px;
+}
+.language-setting select {
+  min-width: 220px;
+  max-width: 100%;
+}
+.language-setting p {
+  color: var(--mse-text-muted);
+}
+.error details {
+  width: 100%;
+  margin-top: 8px;
+}
+.error pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+html[lang="ja"] .nav-item {
+  gap: 8px;
+  padding-inline: 10px;
+}

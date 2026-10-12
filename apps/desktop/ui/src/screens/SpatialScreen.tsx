@@ -1,6 +1,7 @@
+import { useI18n } from "../i18n";
 import HelpTooltip from "../components/ui/HelpTooltip";
 import type { AudioHelpKey } from "../content/audioHelp";
-import { audioHelp } from "../content/audioHelp";
+import { helpKey } from "../content/audioHelp";
 import type { Profile } from "../profile";
 import { Slider } from "../components";
 import { SpatialVisualizer } from "../components";
@@ -11,18 +12,16 @@ export default function SpatialScreen({
   p: Profile;
   patch: (p: Partial<Profile>) => void;
 }) {
+  const { t, number } = useI18n();
   return (
     <section className="panel spatial-content">
       <div>
-        <span className="badge">PHASE 2 · NOT IMPLEMENTED</span>
-        <h2>A foundation for a wider world.</h2>
-        <p>
-          HRTF, 5.1 / 7.1 virtualization, upmix and room modeling are bypassed.
-          This view previews the planned layout.
-        </p>
+        <span className="badge">{t("spatial.badge")}</span>
+        <h2>{t("spatial.title")}</h2>
+        <p>{t("spatial.description")}</p>
         <Slider
           help="stereoWidth"
-          label="Stereo width"
+          label={t("controls.width")}
           max={200}
           value={p.width}
           unit="%"
@@ -30,15 +29,12 @@ export default function SpatialScreen({
         />
         <Slider
           help="crossfeed"
-          label="Basic crossfeed"
+          label={t("controls.crossfeed")}
           value={p.crossfeed}
           onChange={(crossfeed) => patch({ crossfeed })}
         />
-        <small>
-          Crossfeed currently mixes L/R directly; frequency-dependent crossfeed
-          is pending.
-        </small>
-        <div className="planned-help" aria-label="Planned spatial features">
+        <small>{t("spatial.crossfeedNote")}</small>
+        <div className="planned-help" aria-label={t("spatial.plannedFeatures")}>
           {(
             [
               "intensity",
@@ -53,7 +49,7 @@ export default function SpatialScreen({
             ] as AudioHelpKey[]
           ).map((key) => (
             <span className="help-label" key={key}>
-              {audioHelp[key].title}
+              {t(helpKey(key, "title"))}
               <HelpTooltip help={key} />
             </span>
           ))}

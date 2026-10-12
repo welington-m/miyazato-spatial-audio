@@ -1,3 +1,6 @@
+import { useI18n } from "./i18n";
+import { navKeys } from "./i18n/labels";
+import { errorKey } from "./i18n/errors";
 import HelpTooltip from "./components/ui/HelpTooltip";
 import BrandLogo from "./BrandLogo";
 import { branding } from "./config/branding";
@@ -34,6 +37,7 @@ const nav = [
   ["Settings", Settings],
 ] as const;
 export default function App() {
+  const { t, number, language } = useI18n();
   const {
     settings,
     setSettings,
@@ -77,7 +81,7 @@ export default function App() {
     <div className="quick-grid">
       <Slider
         help="stereoWidth"
-        label="Stereo width"
+        label={t("controls.width")}
         value={p.width}
         max={200}
         unit="%"
@@ -85,22 +89,22 @@ export default function App() {
       />
       <Slider
         help="bass"
-        label="Bass"
+        label={t("controls.bass")}
         value={p.bass}
         onChange={(bass) => patch({ bass })}
       />
       <Slider
         help="clarity"
-        label="Clarity"
+        label={t("controls.clarity")}
         value={p.clarity}
         onChange={(clarity) => patch({ clarity })}
       />
       <div className="pending-control">
         <span className="help-label">
-          Spatial / Immersion <HelpTooltip help="spatial" />
+          {t("controls.spatial")} <HelpTooltip help="spatial" />
         </span>
-        <strong>Phase 2</strong>
-        <small>HRTF & room modeling · bypass</small>
+        <strong>{t("status.phaseTwo")}</strong>
+        <small>{t("home.spatialNote")}</small>
       </div>
     </div>
   );
@@ -133,7 +137,7 @@ export default function App() {
             MIYAZATO<small>SPATIAL ENGINE</small>
           </span>
         </a>
-        <div className="nav-label">YOUR SOUND SPACE</div>
+        <div className="nav-label">{t("sidebar.space")}</div>
         <nav>
           {nav.map(([name, Icon]) => (
             <button
@@ -142,7 +146,7 @@ export default function App() {
               onClick={() => setPage(name)}
             >
               <Icon size={19} />
-              {name}
+              {t(navKeys[name])}
               {name === "Home" && <span className="nav-dot" />}
             </button>
           ))}
@@ -151,20 +155,20 @@ export default function App() {
           <div className="engine-chip">
             <span className={status.running ? "live-dot" : "idle-dot"} />
             {status.running
-              ? "Engine active"
+              ? t("status.engineActive")
               : native
-                ? "Engine stopped"
-                : "Browser preview"}
+                ? t("status.engineStopped")
+                : t("status.browserPreview")}
           </div>
-          <p>Crafted for the way you listen.</p>
+          <p>{t("sidebar.tagline")}</p>
           <span className="version">
-            VERSION {branding.version} · FOUNDATION
+            {t("sidebar.version", { version: branding.version })}
           </span>
         </div>
       </aside>
       <div className="workspace">
         <header className="topbar">
-          <span className="topbar-path" title={branding.tagline}>
+          <span className="topbar-path" title={t("brand.precisionTagline")}>
             {branding.appName}
           </span>
           <button
@@ -173,11 +177,11 @@ export default function App() {
           >
             <Headphones size={18} />
             <span>
-              {device?.name || "Select an output"}
+              {device?.name || t("devices.selectOutput")}
               <small>
                 {device
-                  ? `${(device.sampleRate / 1000).toFixed(1)} kHz · ${device.channels} ch`
-                  : "No endpoint active"}
+                  ? `${number(device.sampleRate / 1000, 1)} kHz · ${t("common.channels", { count: device.channels })}`
+                  : t("devices.noActive")}
               </small>
             </span>
             <ChevronDown size={15} />
@@ -185,8 +189,10 @@ export default function App() {
           <div className="topbar-divider" />
           <button
             className={`power ${!p.bypass ? "on" : ""}`}
-            aria-label={p.bypass ? "Enable processing" : "Disable processing"}
-            title="Processing power (−6 dB dry reference; safety limiter stays active)"
+            aria-label={
+              p.bypass ? t("processing.enable") : t("processing.disable")
+            }
+            title={t("processing.powerTitle")}
             onClick={() => patch({ bypass: !p.bypass })}
           >
             <Power size={21} />
@@ -195,14 +201,16 @@ export default function App() {
         <main>
           <div className="page-heading">
             <div>
-              <div className="eyebrow">MIYAZATO / {page.toUpperCase()}</div>
-              <h1>{page === "Home" ? "Find your sound." : page}</h1>
+              <div className="eyebrow">
+                MIYAZATO / {t(navKeys[page]).toLocaleUpperCase(language)}
+              </div>
+              <h1>{page === "Home" ? t("home.title") : t(navKeys[page])}</h1>
               <p>
                 {page === "Home"
-                  ? "Give every moment a new dimension. Make it yours."
+                  ? t("home.subtitle")
                   : page === "Equalizer"
-                    ? "Shape the details. Ten bands, one effortless curve."
-                    : "Your listening experience, finely tuned."}
+                    ? t("page.equalizerSubtitle")
+                    : t("page.subtitle")}
               </p>
             </div>
             <div className="comparison">
@@ -225,22 +233,29 @@ export default function App() {
                 aria-pressed={p.bypass}
                 onClick={() => patch({ bypass: !p.bypass })}
               >
-                BYPASS
+                {t("status.bypass")}
               </button>
               <HelpTooltip help="bypass" />
             </div>
           </div>
           {!native && (
             <div className="preview-note">
-              <span className="badge">UI PREVIEW</span> No Windows audio
-              connection. Controls are saved locally; DSP runs only in the
-              native host.
+              <span className="badge">{t("preview.badge")}</span>{" "}
+              {t("preview.note")}
             </div>
           )}
           {(error || status.error) && (
             <div className="error" role="alert">
-              {error || status.error}
-              <button onClick={() => setError("")}>Dismiss</button>
+              {t(errorKey(error || status.error) ?? "errors.native")}
+              {!errorKey(error || status.error) && (
+                <details>
+                  <summary>{t("errors.details")}</summary>
+                  <pre>{error || status.error}</pre>
+                </details>
+              )}
+              <button onClick={() => setError("")}>
+                {t("common.dismiss")}
+              </button>
             </div>
           )}
           {(page === "Home" || page === "Audio Profiles") && (
@@ -255,17 +270,17 @@ export default function App() {
               />
               {page === "Audio Profiles" && (
                 <section className="panel">
-                  <h2>Your profiles</h2>
+                  <h2>{t("profiles.title")}</h2>
                   <div className="save-profile">
                     <input
-                      aria-label="Custom profile name"
-                      placeholder="Name your profile"
+                      aria-label={t("profiles.name")}
+                      placeholder={t("profiles.placeholder")}
                       value={customName}
                       onChange={(e) => setCustomName(e.target.value)}
                     />
                     <button className="primary" onClick={saveCustom}>
                       <Save size={16} />
-                      Save current
+                      {t("profiles.save")}
                     </button>
                   </div>
                   {settings.custom.map((profile, i) => (
@@ -288,7 +303,7 @@ export default function App() {
                           }))
                         }
                       >
-                        Delete
+                        {t("common.delete")}
                       </button>
                     </div>
                   ))}
@@ -324,32 +339,35 @@ export default function App() {
           <span>
             <i className={status.running ? "live-dot" : "idle-dot"} />
             {status.running
-              ? "Audio engine active"
+              ? t("status.audioEngineActive")
               : native
-                ? "Audio engine stopped"
-                : "Preview · no audio engine"}
+                ? t("status.audioEngineStopped")
+                : t("status.noEngine")}
           </span>
           <span>
             {device
-              ? `${device.sampleRate / 1000} kHz · 32-bit float DSP · ${device.channels} ch`
-              : "No active audio format"}
+              ? `${number(device.sampleRate / 1000)} kHz · 32-bit ${t("common.float")} DSP · ${t("common.channels", { count: device.channels })}`
+              : t("status.noFormat")}
             <HelpTooltip help="sampleRate" />
             <HelpTooltip help="channels" />
           </span>
           <span>
-            Buffer {status.running ? `${status.bufferMs.toFixed(1)} ms` : "—"}
+            {t("status.buffer")}{" "}
+            {status.running ? `${number(status.bufferMs, 1)} ms` : "—"}
             <HelpTooltip help="buffer" />
             <HelpTooltip help="latency" />
           </span>
           <span>
-            Callback{" "}
-            {status.running ? `${status.callbackMs.toFixed(2)} ms` : "—"}
+            {t("status.callback")}{" "}
+            {status.running ? `${number(status.callbackMs, 2)} ms` : "—"}
             <HelpTooltip help="callback" />
           </span>
           <span>
-            Glitches {status.glitches}
-            <HelpTooltip help="glitches" /> · Underruns {status.underruns}
-            <HelpTooltip help="underruns" /> · Overruns {status.overruns}
+            {t("status.glitches")} {number(status.glitches)}
+            <HelpTooltip help="glitches" /> · {t("status.underruns")}{" "}
+            {number(status.underruns)}
+            <HelpTooltip help="underruns" /> · {t("status.overruns")}{" "}
+            {number(status.overruns)}
             <HelpTooltip help="overruns" />
           </span>
         </footer>

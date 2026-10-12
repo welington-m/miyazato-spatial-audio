@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import HelpTooltip from "./components/ui/HelpTooltip";
 import type { AudioHelpKey } from "./content/audioHelp";
 import { useEffect, useRef, useId } from "react";
@@ -19,6 +20,7 @@ export function Slider({
   unit?: string;
   onChange: (value: number) => void;
 }) {
+  const { number } = useI18n();
   const id = useId();
   return (
     <div className="slider">
@@ -28,7 +30,7 @@ export function Slider({
           {help && <HelpTooltip help={help} />}
         </span>
         <strong>
-          {value.toFixed(value % 1 ? 1 : 0)}
+          {number(value, value % 1 ? 1 : 0)}
           <small>{unit}</small>
         </strong>
       </span>
@@ -46,6 +48,7 @@ export function Slider({
   );
 }
 export function Meter({ label, value }: { label: string; value: number }) {
+  const { number } = useI18n();
   return (
     <div className="meter">
       <span>{label}</span>
@@ -60,7 +63,7 @@ export function Meter({ label, value }: { label: string; value: number }) {
       </div>
       <small>
         {value > 0
-          ? `${Math.max(-60, 20 * Math.log10(value)).toFixed(1)} dB`
+          ? `${number(Math.max(-60, 20 * Math.log10(value)), 1)} dB`
           : "−∞"}
       </small>
     </div>
@@ -73,6 +76,7 @@ export function Spectrum({
   analyzer: Analyzer | null;
   mock: boolean;
 }) {
+  const { t } = useI18n();
   // Mock spectrum is static and explicitly identified. Real FFT is not inferred from decimated waveform.
   const heights = Array.from({ length: 64 }, (_, i) =>
     Math.max(6, (Math.sin(i * 0.23) * 0.25 + 0.45) * Math.exp(-i / 95) * 100),
@@ -80,9 +84,10 @@ export function Spectrum({
   return (
     <div className="spectrum-panel">
       <div className="section-label">
-        FREQUENCY SPECTRUM <span className="badge">MOCK · FFT pending</span>
+        {t("spectrum.title")}{" "}
+        <span className="badge">{t("spectrum.pending")}</span>
       </div>
-      <div className="spectrum" aria-label="Static mock spectrum">
+      <div className="spectrum" aria-label={t("spectrum.aria")}>
         {heights.map((h, i) => (
           <i key={i} style={{ height: `${h}%` }} />
         ))}
@@ -96,15 +101,16 @@ export function Spectrum({
       </div>
       <small>
         {mock
-          ? "Browser preview · no audio processing"
+          ? t("spectrum.preview")
           : analyzer
-            ? "Live peak / RMS below · spectrum remains a mock"
-            : "Engine stopped · spectrum is illustrative"}
+            ? t("spectrum.live")
+            : t("spectrum.stopped")}
       </small>
     </div>
   );
 }
 export function Orb({ level, effects }: { level: number; effects: string }) {
+  const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     ref.current?.style.setProperty(
@@ -121,18 +127,17 @@ export function Orb({ level, effects }: { level: number; effects: string }) {
         <div className="orb-lines" />
       </div>
       <span className="orb-label">
-        STEREO ENGINE<span>Original DSP. Your sound.</span>
+        {t("orb.stereo")}
+        <span>{t("brand.tagline")}</span>
       </span>
     </div>
   );
 }
 export function SpatialVisualizer() {
+  const { t } = useI18n();
   return (
-    <div
-      className="spatial-map"
-      aria-label="Surround layout preview, processing not implemented"
-    >
-      <span className="front-label">FRONT</span>
+    <div className="spatial-map" aria-label={t("spatial.layoutAria")}>
+      <span className="front-label">{t("spatial.front")}</span>
       {["FL", "C", "FR", "SL", "SR", "RL", "RR"].map((ch, i) => (
         <span className={`speaker speaker-${i}`} key={ch}>
           {ch}
@@ -141,7 +146,7 @@ export function SpatialVisualizer() {
       <div className="head">
         ◯<span>⌒</span>
       </div>
-      <small>Layout preview · HRTF bypass</small>
+      <small>{t("spatial.layoutNote")}</small>
     </div>
   );
 }

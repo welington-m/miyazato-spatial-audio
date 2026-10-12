@@ -1,4 +1,5 @@
-import { audioHelp } from "./content/audioHelp";
+import { useI18n } from "./i18n";
+import { helpKey } from "./content/audioHelp";
 import HelpTooltip from "./components/ui/HelpTooltip";
 import { useRef, useState, useMemo } from "react";
 import type { Band } from "./profile";
@@ -87,6 +88,7 @@ export default function EQGraph({
   onChange: (bands: Band[]) => void;
   sampleRate?: number;
 }) {
+  const { t, number } = useI18n();
   const ref = useRef<SVGSVGElement>(null),
     [selected, setSelected] = useState(5),
     [dragging, setDragging] = useState(false);
@@ -107,7 +109,7 @@ export default function EQGraph({
         ref={ref}
         className="eq-graph"
         viewBox={`0 0 ${width} ${height}`}
-        aria-label="Parametric equalizer response"
+        aria-label={t("eq.response")}
         onPointerMove={(e) => {
           if (!dragging || !ref.current) return;
           const r = ref.current.getBoundingClientRect();
@@ -145,7 +147,7 @@ export default function EQGraph({
             <line x1={0} x2={width} y1={y(g)} y2={y(g)} className="grid-line" />
             <text x={8} y={y(g) - 6}>
               {g > 0 ? "+" : ""}
-              {g} dB
+              {number(g)} dB
             </text>
           </g>
         ))}
@@ -174,7 +176,7 @@ export default function EQGraph({
             key={i}
             role="slider"
             tabIndex={0}
-            aria-label={`Band ${i + 1} gain`}
+            aria-label={t("eq.bandGain", { band: i + 1 })}
             aria-valuemin={-12}
             aria-valuemax={12}
             aria-valuenow={b.gainDb}
@@ -205,7 +207,11 @@ export default function EQGraph({
             }}
           >
             <title>
-              {b.frequency} Hz · {b.gainDb} dB · Q {b.q}
+              {t("eq.bandSummary", {
+                frequency: number(b.frequency),
+                gain: number(b.gainDb, b.gainDb % 1 ? 1 : 0),
+                q: number(b.q, 3),
+              })}
             </title>
           </circle>
         ))}
@@ -217,9 +223,9 @@ export default function EQGraph({
       </div>
       <div className="band-editor">
         <div className="band-field">
-          Band
+          {t("eq.band")}
           <select
-            aria-label="Band"
+            aria-label={t("eq.band")}
             value={selected}
             onChange={(e) => setSelected(Number(e.target.value))}
           >
@@ -232,10 +238,10 @@ export default function EQGraph({
         </div>
         <div className="band-field">
           <span className="help-label">
-            Frequency <HelpTooltip help="frequency" />
+            {t("eq.frequency")} <HelpTooltip help="frequency" />
           </span>
           <input
-            aria-label="Band frequency"
+            aria-label={t("eq.frequencyAria")}
             type="number"
             min={20}
             max={20000}
@@ -252,10 +258,10 @@ export default function EQGraph({
         </div>
         <div className="band-field">
           <span className="help-label">
-            Gain dB <HelpTooltip help="gain" />
+            {t("eq.gain")} <HelpTooltip help="gain" />
           </span>
           <input
-            aria-label="Band gain"
+            aria-label={t("eq.gainAria")}
             type="number"
             min={-12}
             max={12}
@@ -270,10 +276,10 @@ export default function EQGraph({
         </div>
         <div className="band-field">
           <span className="help-label">
-            Q <HelpTooltip help="q" />
+            {t("eq.q")} <HelpTooltip help="q" />
           </span>
           <input
-            aria-label="Band Q"
+            aria-label={t("eq.qAria")}
             type="number"
             min={0.1}
             max={12}
@@ -288,41 +294,47 @@ export default function EQGraph({
         </div>
         <div className="band-field">
           <span className="help-label">
-            Filter <HelpTooltip help="filter" />
+            {t("eq.filter")} <HelpTooltip help="filter" />
           </span>
           <select
-            aria-label="Filter type"
+            aria-label={t("eq.filterAria")}
             value={bands[selected].type}
             onChange={(e) => update(selected, { type: Number(e.target.value) })}
           >
-            {["Peak", "Low shelf", "High shelf", "Low pass", "High pass"].map(
-              (v, i) => (
-                <option value={i} key={v}>
-                  {v}
-                </option>
-              ),
-            )}
+            {(
+              [
+                "filter.peak",
+                "filter.lowShelf",
+                "filter.highShelf",
+                "filter.lowPass",
+                "filter.highPass",
+              ] as const
+            ).map((v, i) => (
+              <option value={i} key={v}>
+                {t(v)}
+              </option>
+            ))}
           </select>
         </div>
         <div className="help-label">
           <label className="checkbox">
             <input
               type="checkbox"
-              aria-label="Band enabled"
+              aria-label={t("eq.enabledAria")}
               checked={bands[selected].enabled}
               onChange={(e) => update(selected, { enabled: e.target.checked })}
             />
-            Enabled
+            {t("eq.enabled")}
           </label>
           <HelpTooltip help="bandEnabled" />
         </div>
       </div>
-      <div className="planned-help" aria-label="Filter reference">
+      <div className="planned-help" aria-label={t("eq.filterReference")}>
         {(
           ["peak", "lowShelf", "highShelf", "lowPass", "highPass"] as const
         ).map((key) => (
           <span className="help-label" key={key}>
-            {audioHelp[key].title}
+            {t(helpKey(key, "title"))}
             <HelpTooltip help={key} />
           </span>
         ))}
