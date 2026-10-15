@@ -78,7 +78,11 @@ export default function HomeScreen({
             <span>{t("home.signal")}</span>
             <ArrowUpRight size={16} />
           </div>
-          <SpectrumAnalyzer running={running} nativeAvailable={native} />
+          <SpectrumAnalyzer
+            running={running}
+            nativeAvailable={native}
+            outputId={settings.outputId}
+          />
           <div className="meters">
             <Meter label="L" value={analyzer?.peakL || 0} />
             <Meter label="R" value={analyzer?.peakR || 0} />

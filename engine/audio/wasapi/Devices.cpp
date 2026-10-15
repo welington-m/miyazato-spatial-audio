@@ -31,13 +31,14 @@ std::wstring wide(const std::string &v) {
                         s.data(), n);
     return s;
 }
-std::vector<Device> enumerateOutputs() {
+std::vector<Device> enumerateOutputs() { return enumerateDevices(eRender); }
+std::vector<Device> enumerateDevices(EDataFlow flow) {
     ComPtr<IMMDeviceEnumerator> e;
     check(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, IID_PPV_ARGS(&e)),
           "Device enumerator");
     std::wstring defaultId;
     ComPtr<IMMDevice> def;
-    if (SUCCEEDED(e->GetDefaultAudioEndpoint(eRender, eConsole, &def))) {
+    if (SUCCEEDED(e->GetDefaultAudioEndpoint(flow, eConsole, &def))) {
         LPWSTR id{};
         if (SUCCEEDED(def->GetId(&id))) {
             defaultId = id;
@@ -45,7 +46,7 @@ std::vector<Device> enumerateOutputs() {
         }
     }
     ComPtr<IMMDeviceCollection> list;
-    check(e->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &list), "Enumerate outputs");
+    check(e->EnumAudioEndpoints(flow, DEVICE_STATE_ACTIVE, &list), "Enumerate outputs");
     UINT count{};
     check(list->GetCount(&count), "Device count");
     std::vector<Device> devices;

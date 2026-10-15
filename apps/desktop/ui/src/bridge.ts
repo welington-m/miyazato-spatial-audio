@@ -40,9 +40,21 @@ export interface Status {
   callbackMs: number;
   error: string;
 }
+export type AnalyzerSource = "input" | "output";
+export interface AnalyzerDevice {
+  id: string;
+  name: string;
+  source: AnalyzerSource;
+}
 export type HostEvent =
-  | ({ type: "spectrum" } & SpectrumFrame)
-  | { type: "spectrum.status"; available: boolean; paused: boolean }
+  | { type: "analyzer.devices"; devices: AnalyzerDevice[] }
+  | ({ type: "spectrum"; source?: AnalyzerSource } & SpectrumFrame)
+  | {
+      type: "spectrum.status";
+      available: boolean;
+      paused: boolean;
+      source?: AnalyzerSource;
+    }
   | { type: "devices"; devices: Device[] }
   | { type: "settings"; value: unknown }
   | ({ type: "status" } & Status)

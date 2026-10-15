@@ -9,46 +9,48 @@ are not a Windows listening test.
 
 ## Signal and thread ownership
 
+Previously the FFT observed the post-limiter DSP source tap before the render FIFO.
+It could not see unrelated playback on the selected output. This checkout's source
+list contains render endpoints and its route already uses loopback; there was no
+microphone selection path. The existing DSP route and read-only tap are preserved.
+
+Spectrum IPC now reads an independent `AnalyzerCapture` instance:
+
 ```mermaid
 flowchart LR
-  Capture[WASAPI capture] --> DSP[DSPChain including final limiter]
-  DSP --> FIFO[Existing render FIFO]
-  FIFO --> Output[WASAPI output]
-  DSP -->|read-only L/R tap| Samples[Bounded SPSC sample blocks]
-  Samples --> Worker[Independent FFT worker]
-  Worker --> Frames[Bounded SPSC spectrum frames]
-  Frames --> Timer[Existing 33 ms native UI timer]
-  Timer -->|WebView2 spectrum event| Canvas[React / requestAnimationFrame canvas]
+  Output[Selected render endpoint] --> Loopback[Passive loopback acquisition]
+  Input[Selected capture endpoint] --> Capture[Normal capture acquisition]
+  Loopback --> Samples[Bounded mono float SPSC queue]
+  Capture --> Samples
+  Samples --> FFT[Separate FFT worker]
+  FFT --> Timer[33 ms UI timer]
+  Timer --> UI[WebView2 / React spectrum]
 ```
 
-The tap is immediately after `chain_.process(view)` in
-`engine/audio/wasapi/LoopbackEngine.cpp`, after the sample-peak limiter and before
-render FIFO handling. It observes processed capture samples. Render-side inserted
-silence on underrun, FIFO losses, device volume, and the DAC are outside this tap.
-It does not analyze the existing decimated waveform snapshots.
+Only one acquisition mode runs at a time. Output mode validates `eRender` and uses
+shared mode with `AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK`.
+Input mode validates `eCapture` and uses `EVENTCALLBACK` without loopback. Samples
+never enter a render client, DSP chain, or render FIFO. The render thread has no
+dependency on this acquisition thread. FFT and IPC execute on separate threads.
 
-The audio producer only reads samples, copies combined `(L + R) / 2` values into
-fixed sample blocks, and updates a dropped-block atomic. No FFT, allocation,
-mutex, wait, JSON, IPC, or logging occurs in the tap. The original DSP algorithm,
-profile values, render operations, and peak/RMS/reduction snapshots are unchanged.
-Opposite-phase left/right components can cancel in this combined spectrum.
+Home defaults to the configured output endpoint. Localized source and device
+selectors allow input capture and Windows default. Device changes stop and join the
+previous acquisition thread, release COM interfaces, stop the FFT worker, and open
+the new endpoint. An empty endpoint ID follows Windows default, checked every
+500 ms. Endpoint failure retries after 500 ms with stop checks every 20 ms.
+Analyzer failures do not stop playback. Device lists refresh on Home mount.
 
-The sample SPSC queue reuses `engine/core/SpscQueue.h`: 65 slots hold at most
-64 blocks of 256 mono samples (16,384 samples, about 341 ms at 48 kHz). Partial
-blocks carry a valid sample count. Each block has a sample position; gaps caused
-by drops reset the worker window rather than splicing discontinuous samples.
-Full queues reject new analyzer data without waiting or overwriting unread data.
-The worker drains at most 64 blocks per iteration and analyzes the latest complete
-window in its history. Its frame queue holds three unread frames. A session
-generation prevents old frames from appearing after restart, while preserving
-single-consumer ownership during concurrent UI reads.
+`GetMixFormat` provides the actual rate, channels and encoding. Conversion accepts
+float32/64, unsigned PCM8, signed PCM16/24/32, and extensible valid bits left aligned
+in PCM containers. Unsupported layouts make only analysis unavailable. All channels
+are averaged into fixed 256-sample mono scratch storage without modifying samples.
+Silent packets permit null data and produce zeros. No-packet idle sessions receive
+zeros after 100 ms so the FFT's release smoothing can reach the floor.
 
-Lifecycle setup/shutdown is serialized outside steady-state audio processing.
-The previous worker is joined before its buffers are prepared for a new sample
-rate. Worker setup/allocation/thread-creation and recoverable worker failures are
-contained and only make analysis unavailable. UI delivery failures are contained
-in the optional spectrum telemetry block. No analyzer failure stops the audio
-route. Fatal process failures are outside this recoverable-error contract.
+The bounded SPSC queue drops analyzer blocks without waiting. Session generations
+prevent stale worker frames after restart. Loopback observes the endpoint's Windows
+mix, including other applications, rather than physical DAC or acoustic output.
+See Microsoft's [loopback documentation](https://learn.microsoft.com/en-us/windows/win32/coreaudio/loopback-recording).
 
 ## FFT, window, and levels
 
@@ -97,8 +99,8 @@ numbers only:
 - `spectrum`: sequence, steady-clock millisecond timestamp, FFT size, sample rate,
   frequency bounds, floor, 64 dB bins, compute time, actual analysis update rate,
   dropped sample-block count, and dropped frame count.
-- `spectrum.status`: availability and paused state when the engine is stopped or
-  analysis is unavailable.
+- `spectrum.status`: analyzer availability, pause state and input/output source,
+  independent of DSP route state.
 
 Frames older than one second are not sent as live telemetry. JSON serialization
 and WebView2 calls happen only on the native UI thread.
@@ -159,3 +161,16 @@ and stereo content through distinct compatible endpoints; check visual frequency
 regions, callback tail latency, queue drops, CPU, endpoint loss/restart, and WebView2
 failure. Those hardware/listening checks have not been performed in this Linux
 workspace. The spectrum alone must not be used to judge DSP sound quality.
+
+## Output loopback validation status
+
+Windows compilation and live playback have **not** been validated in this Linux
+workspace. This is not yet a confirmed playback fix. Required Windows checks:
+microphone speech; speakers with YouTube; headphones with Spotify; pause-to-floor
+decay; Speakers → Headphones switching; default endpoint changes; unplug/replug
+recovery; idle silence without animation; playback continuing if analysis fails.
+Compare output with analysis disabled to confirm unchanged playback.
+
+Added tests cover PCM/float conversion, surround averaging, silent null packets,
+source preservation, UI input/output routing, endpoint changes and analyzer-only
+stop/start commands. Windows COM lifecycle tests and live validation remain pending.

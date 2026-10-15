@@ -10,6 +10,7 @@ struct Device {
     unsigned channels{}, sampleRate{}, bits{};
     bool isDefault{}, floatFormat{};
 };
+std::vector<Device> enumerateDevices(EDataFlow flow);
 std::vector<Device> enumerateOutputs();
 std::string utf8(const std::wstring &value);
 std::wstring wide(const std::string &value);

@@ -1,4 +1,5 @@
 #include "engine/dsp/Dsp.h"
+#include "engine/dsp/analyzer/AnalyzerMix.h"
 #include "engine/dsp/analyzer/SpectrumAnalyzer.h"
 #include <algorithm>
 #include <catch2/catch_approx.hpp>
@@ -280,4 +281,27 @@ TEST_CASE("High-frequency tones do not acquire a false low-frequency DC-removal 
         REQUIRE(nearby(frame, 25) < -80);
         REQUIRE(nearby(frame, frequency) > -9);
     }
+}
+
+TEST_CASE("Endpoint analyzer decodes PCM containers and averages surround without modifying data") {
+    using namespace miyazato::analysis;
+    const std::array<unsigned char, 3> negative24{0, 0, 0x80};
+    REQUIRE(decode(negative24.data(), 24, 24, false) == -1.f);
+    const std::array<unsigned char, 4> positive24in32{0, 0, 0, 0x40};
+    REQUIRE(decode(positive24in32.data(), 32, 24, false) == Approx(0.5f));
+    const std::array<unsigned char, 2> negative16{0, 0x80};
+    REQUIRE(decode(negative16.data(), 16, 16, false) == -1.f);
+    const unsigned char unsignedSilence = 128;
+    REQUIRE(decode(&unsignedSilence, 8, 8, false) == 0.f);
+    std::array<float, 12> surround{1, 0, 0, 0, 0, -1, .6f, .6f, .6f, .6f, .6f, .6f};
+    const auto original = surround;
+    std::array<float, 2> mono{};
+    mixMono(reinterpret_cast<const unsigned char *>(surround.data()), mono, 6, 32, 32, true, false);
+    REQUIRE(mono[0] == 0.f);
+    REQUIRE(mono[1] == Approx(.6f));
+    REQUIRE(surround == original);
+    mixMono(nullptr, mono, 6, 32, 32, true, true);
+    REQUIRE(mono == std::array<float, 2>{0.f, 0.f});
+    const double sample = .25;
+    REQUIRE(decode(reinterpret_cast<const unsigned char *>(&sample), 64, 64, true) == .25f);
 }

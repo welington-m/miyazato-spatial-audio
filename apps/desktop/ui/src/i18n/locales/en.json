@@ -418,7 +418,7 @@
   "spectrum.liveAria": "Live frequency spectrum",
   "spectrum.observation": "Combined L/R · post-limiter · 64 logarithmic bands",
   "help.spectrum.title": "Frequency Spectrum",
-  "help.spectrum.description": "Shows the final processed audio across 64 logarithmic frequency bands. The native worker analyzes the combined signal (L + R) / 2 after the limiter.",
+  "help.spectrum.description": "Shows audio from the selected system output or input across 64 logarithmic frequency bands. Channels are averaged for visualization; the analyzer does not change playback.",
   "help.spectrum.usage": "Seeing bass, midrange and treble activity; visual monitoring only.",
   "help.spectrum.warning": "Opposite-phase L/R content can cancel in the combined spectrum. The graph is not a measure of sound quality; browser fallback bars are illustrative.",
   "help.fft.title": "FFT",
@@ -430,5 +430,11 @@
   "help.dbfs.usage": "Comparing the strength of frequency regions in the digital signal.",
   "help.dbfs.warning": "Each wide band shows its strongest measured magnitude. This is not integrated loudness, a true-peak meter, or a calibrated sound-pressure level.",
   "spectrum.status.illustrativeAwaiting": "ILLUSTRATIVE · awaiting live FFT",
-  "spectrum.status.illustrativePaused": "ILLUSTRATIVE · analyzer paused"
+  "spectrum.status.illustrativePaused": "ILLUSTRATIVE · analyzer paused",
+  "spectrum.source": "Source",
+  "spectrum.source.output": "System Output",
+  "spectrum.source.input": "Input",
+  "spectrum.endpoint": "Device",
+  "spectrum.default": "Windows default",
+  "spectrum.endpointObservation": "Endpoint audio · mono mix · 64 logarithmic bands"
 }

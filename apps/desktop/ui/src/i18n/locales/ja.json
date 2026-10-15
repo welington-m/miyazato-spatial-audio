@@ -418,7 +418,7 @@
   "spectrum.liveAria": "リアルタイム周波数スペクトル",
   "spectrum.observation": "L/R合成 · リミッター後 · 64の対数帯域",
   "help.spectrum.title": "周波数スペクトル",
-  "help.spectrum.description": "最終的な処理後の音を64の対数帯域で表示します。ネイティブのワーカーが、リミッター後の合成信号（L + R）/ 2を解析します。",
+  "help.spectrum.description": "選択したシステム出力または入力の音声を64の対数周波数帯域で表示します。表示用に全チャンネルを平均化します。再生音声は変更しません。",
   "help.spectrum.usage": "低域・中域・高域の動きを確認するための視覚的なモニタリング。",
   "help.spectrum.warning": "左右の逆相成分は合成時に相殺されることがあります。音質を測るグラフではありません。ブラウザの代替表示はイメージです。",
   "help.fft.title": "FFT",
@@ -430,5 +430,11 @@
   "help.dbfs.usage": "デジタル信号の各周波数帯域の強さを比較するとき。",
   "help.dbfs.warning": "広い帯域では最も強い実測振幅を表示します。積算ラウドネス、トゥルーピーク、校正済みの音圧レベルの測定ではありません。",
   "spectrum.status.illustrativeAwaiting": "イメージ表示 · FFTデータを待機中",
-  "spectrum.status.illustrativePaused": "イメージ表示 · アナライザー一時停止中"
+  "spectrum.status.illustrativePaused": "イメージ表示 · アナライザー一時停止中",
+  "spectrum.source": "ソース",
+  "spectrum.source.output": "システム出力",
+  "spectrum.source.input": "入力",
+  "spectrum.endpoint": "デバイス",
+  "spectrum.default": "Windows の既定",
+  "spectrum.endpointObservation": "デバイス音声 · モノラル合成 · 64の対数帯域"
 }

@@ -418,7 +418,7 @@
   "spectrum.liveAria": "Espectro de frequências ao vivo",
   "spectrum.observation": "L/R combinados · após o limitador · 64 bandas logarítmicas",
   "help.spectrum.title": "Espectro de frequências",
-  "help.spectrum.description": "Mostra o áudio processado final em 64 bandas logarítmicas. O analisador nativo mede o sinal combinado (L + R) / 2 após o limitador.",
+  "help.spectrum.description": "Mostra o áudio da saída do sistema ou entrada selecionada em 64 bandas logarítmicas. Os canais são combinados para visualização; o analisador não altera a reprodução.",
   "help.spectrum.usage": "Observar a atividade de graves, médios e agudos. Apenas monitoramento visual.",
   "help.spectrum.warning": "Conteúdo L/R em oposição de fase pode se cancelar no espectro combinado. O gráfico não mede qualidade sonora; as barras da prévia no navegador são ilustrativas.",
   "help.fft.title": "FFT",
@@ -430,5 +430,11 @@
   "help.dbfs.usage": "Comparar a intensidade de regiões de frequência do sinal digital.",
   "help.dbfs.warning": "Cada banda ampla mostra a maior magnitude medida. Não é uma medição de loudness integrado, true peak ou pressão sonora calibrada.",
   "spectrum.status.illustrativeAwaiting": "ILUSTRATIVO · aguardando FFT ao vivo",
-  "spectrum.status.illustrativePaused": "ILUSTRATIVO · analisador pausado"
+  "spectrum.status.illustrativePaused": "ILUSTRATIVO · analisador pausado",
+  "spectrum.source": "Fonte",
+  "spectrum.source.output": "Saída do sistema",
+  "spectrum.source.input": "Entrada",
+  "spectrum.endpoint": "Dispositivo",
+  "spectrum.default": "Padrão do Windows",
+  "spectrum.endpointObservation": "Áudio do dispositivo · mix mono · 64 bandas logarítmicas"
 }

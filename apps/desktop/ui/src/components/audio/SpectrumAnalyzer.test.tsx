@@ -229,3 +229,44 @@ describe("spectrum data and drawing", () => {
     expect(frequencyPosition(20000, 20, 20000)).toBe(1);
   });
 });
+
+it("selects output independently, recreates on device changes, and preserves input capture selection", () => {
+  const post = vi.spyOn(bridge, "post").mockImplementation(() => {});
+  const view = render(
+    <SpectrumAnalyzer running={false} nativeAvailable outputId="speakers" />,
+  );
+  expect(post).toHaveBeenCalledWith("analyzer.select", {
+    source: "output",
+    endpointId: "speakers",
+  });
+  view.rerender(
+    <SpectrumAnalyzer running={false} nativeAvailable outputId="headphones" />,
+  );
+  expect(post).toHaveBeenCalledWith("analyzer.stop");
+  expect(post).toHaveBeenLastCalledWith("analyzer.select", {
+    source: "output",
+    endpointId: "headphones",
+  });
+  fireEvent.change(screen.getByLabelText("Source"), {
+    target: { value: "input" },
+  });
+  expect(post).toHaveBeenLastCalledWith("analyzer.select", {
+    source: "input",
+    endpointId: "",
+  });
+  fireEvent.change(screen.getByLabelText("Source"), {
+    target: { value: "output" },
+  });
+  fireEvent.change(screen.getByLabelText("Device"), { target: { value: "" } });
+  expect(post).toHaveBeenLastCalledWith("analyzer.select", {
+    source: "output",
+    endpointId: "",
+  });
+  expect(
+    post.mock.calls.some(
+      ([type]) => type === "engine.start" || type === "engine.stop",
+    ),
+  ).toBe(false);
+  view.unmount();
+  expect(post).toHaveBeenLastCalledWith("analyzer.stop");
+});

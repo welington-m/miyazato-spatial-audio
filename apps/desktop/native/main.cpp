@@ -1,6 +1,7 @@
 #include "engine/audio/wasapi/Devices.h"
 #include "engine/audio/wasapi/LoopbackEngine.h"
 #include "resource.h"
+#include "engine/audio/wasapi/AnalyzerCapture.h"
 #include <WebView2.h>
 #include <chrono>
 #include <filesystem>
@@ -17,6 +18,9 @@ namespace {
 ComPtr<ICoreWebView2Controller> controller;
 ComPtr<ICoreWebView2> web;
 miyazato::windows::LoopbackEngine engine;
+miyazato::windows::AnalyzerCapture spectrumCapture;
+bool spectrumPaused = true;
+std::string spectrumSource = "output";
 std::filesystem::path settingsPath;
 bool closing = false;
 std::string routeSource, routeOutput;
@@ -76,7 +80,26 @@ void receive(const json &m) {
     const std::string type = m.at("type");
     auto request = m.value("requestId", std::string{});
     try {
-        if (type == "devices.list")
+        if (type == "analyzer.select") {
+            spectrumSource = m.value("source", std::string("output"));
+            if (spectrumSource != "output" && spectrumSource != "input")
+                throw std::runtime_error("Invalid analyzer source");
+            spectrumPaused = false;
+            spectrumCapture.start(miyazato::windows::wide(m.value("endpointId", std::string{})),
+                spectrumSource == "output" ? miyazato::windows::AnalyzerSource::OutputLoopback
+                                           : miyazato::windows::AnalyzerSource::InputCapture);
+        } else if (type == "analyzer.stop") {
+            spectrumCapture.stop();
+            spectrumPaused = true;
+        } else if (type == "analyzer.devices") {
+            json rows = json::array();
+            for (auto flow : {eRender, eCapture})
+                for (const auto &d : miyazato::windows::enumerateDevices(flow))
+                    rows.push_back({{"id", miyazato::windows::utf8(d.id)},
+                                    {"name", miyazato::windows::utf8(d.name)},
+                                    {"source", flow == eRender ? "output" : "input"}});
+            send({{"type", "analyzer.devices"}, {"devices", rows}});
+        } else if (type == "devices.list")
             send({{"type", "devices"}, {"devices", devices()}, {"requestId", request}});
         else if (type == "settings.load") {
             json value = nullptr;
@@ -204,7 +227,7 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         try {
             miyazato::SpectrumFrame frame, latest;
             bool hasSpectrum = false;
-            while (engine.spectrum(frame)) {
+            while (spectrumCapture.snapshot(frame)) {
                 latest = frame;
                 hasSpectrum = true;
             }
@@ -212,9 +235,10 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
                                           std::chrono::steady_clock::now().time_since_epoch())
                                           .count());
-            if (s.running && engine.spectrumAvailable() && hasSpectrum && latest.timestamp <= now &&
+            if (spectrumCapture.available() && hasSpectrum && latest.timestamp <= now &&
                 now - latest.timestamp <= 1000)
                 send({{"type", "spectrum"},
+                      {"source", spectrumSource},
                       {"sequence", latest.sequence},
                       {"timestamp", latest.timestamp},
                       {"fftSize", latest.fftSize},
@@ -227,14 +251,15 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                       {"updatesPerSecond", latest.updatesPerSecond},
                       {"droppedBlocks", latest.droppedBlocks},
                       {"droppedFrames", latest.droppedFrames}});
-            else if (!s.running || !engine.spectrumAvailable())
-                send({{"type", "spectrum.status"}, {"available", false}, {"paused", !s.running}});
+            else if (!spectrumCapture.available())
+                send({{"type", "spectrum.status"}, {"available", false}, {"paused", spectrumPaused}, {"source", spectrumSource}});
         } catch (...) {
             // UI expires stale frames; analyzer delivery is strictly best-effort.
         }
         return 0;
     }
     case WM_CLOSE:
+        spectrumCapture.stop();
         closing = true;
         if (notificationsEnumerator && notifications)
             notificationsEnumerator->UnregisterEndpointNotificationCallback(notifications.Get());

@@ -1,5 +1,12 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { native, subscribe, type SpectrumFrame } from "../../bridge";
+import {
+  native,
+  post,
+  subscribe,
+  type AnalyzerDevice,
+  type AnalyzerSource,
+  type SpectrumFrame,
+} from "../../bridge";
 import { useI18n } from "../../i18n";
 import HelpTooltip from "../ui/HelpTooltip";
 import {
@@ -28,11 +35,37 @@ const frequencyTicks = [20, 100, 1000, 10000, 20000];
 export default memo(function SpectrumAnalyzer({
   running,
   nativeAvailable = native,
+  outputId,
 }: {
   running: boolean;
   nativeAvailable?: boolean;
+  outputId?: string;
 }) {
   const { t, number } = useI18n();
+  const [source, setSource] = useState<AnalyzerSource>("output");
+  const [endpoint, setEndpoint] = useState<string | null>(null);
+  const [devices, setDevices] = useState<AnalyzerDevice[]>([]);
+  const independent = outputId !== undefined;
+  running = independent || running;
+  useEffect(() => {
+    if (!nativeAvailable || !independent) return;
+    const unsubscribe = subscribe((event) => {
+      if (event.type === "analyzer.devices") setDevices(event.devices);
+    });
+    post("analyzer.devices");
+    return unsubscribe;
+  }, [nativeAvailable, independent]);
+  useEffect(() => {
+    if (!nativeAvailable || !independent) return;
+    frame.current = null;
+    updatePhase("awaiting");
+    post("analyzer.select", {
+      source,
+      endpointId: endpoint ?? (source === "output" ? outputId : ""),
+    });
+    return () => post("analyzer.stop");
+  }, [source, endpoint, outputId, nativeAvailable, independent]);
+
   const [phase, setPhase] = useState<Phase>(
     nativeAvailable ? (running ? "awaiting" : "paused") : "preview",
   );
@@ -72,6 +105,7 @@ export default memo(function SpectrumAnalyzer({
       if (
         event.type === "spectrum" &&
         runningRef.current &&
+        (!event.source || event.source === source) &&
         isSpectrumFrame(event)
       ) {
         frame.current = { value: event, receivedAt: performance.now() };
@@ -99,7 +133,7 @@ export default memo(function SpectrumAnalyzer({
         updatePhase(event.paused ? "paused" : "unavailable");
       }
     });
-  }, [nativeAvailable, running]);
+  }, [nativeAvailable, running, source, endpoint, outputId]);
   useEffect(() => {
     if (!nativeAvailable || !canvas.current) return;
     const element = canvas.current;
@@ -218,6 +252,43 @@ export default memo(function SpectrumAnalyzer({
           )}
         </span>
       </div>
+      {independent && (
+        <div className="spectrum-info">
+          <label>
+            {t("spectrum.source")}{" "}
+            <select
+              value={source}
+              onChange={(event) => {
+                setSource(event.target.value as AnalyzerSource);
+                setEndpoint(null);
+                frame.current = null;
+                updatePhase("awaiting");
+              }}
+            >
+              <option value="output">{t("spectrum.source.output")}</option>
+              <option value="input">{t("spectrum.source.input")}</option>
+            </select>
+          </label>
+          <select
+            aria-label={t("spectrum.endpoint")}
+            value={endpoint ?? (source === "output" ? outputId : "")}
+            onChange={(event) => {
+              setEndpoint(event.target.value);
+              frame.current = null;
+              updatePhase("awaiting");
+            }}
+          >
+            <option value="">{t("spectrum.default")}</option>
+            {devices
+              .filter((device) => device.source === source)
+              .map((device) => (
+                <option key={device.id} value={device.id}>
+                  {device.name}
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
       <div className="spectrum-stage">
         <canvas
           ref={canvas}
@@ -266,7 +337,13 @@ export default memo(function SpectrumAnalyzer({
       </div>
       <div className="spectrum-info">
         <small>
-          {t(phase === "preview" ? "spectrum.preview" : "spectrum.observation")}
+          {t(
+            phase === "preview"
+              ? "spectrum.preview"
+              : independent
+                ? "spectrum.endpointObservation"
+                : "spectrum.observation",
+          )}
         </small>
         <span className="help-label">
           FFT <HelpTooltip help="fft" />
