@@ -1,0 +1,55 @@
+name: Build and test
+on: [push, pull_request]
+jobs:
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025-vs2026
+            toolchain: vs2026
+          - runner: windows-2022
+            toolchain: vs2022
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/desktop/ui/package-lock.json
+      - run: npm ci --prefix apps/desktop/ui
+      - run: npm run build --prefix apps/desktop/ui
+      - run: npm test --prefix apps/desktop/ui
+      - name: Download WebView2 SDK
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.2903.40 -OutFile "$env:RUNNER_TEMP/webview.zip"
+          Expand-Archive "$env:RUNNER_TEMP/webview.zip" "$env:RUNNER_TEMP/webview"
+      - name: Install CMake with VS2026 generator support
+        run: |
+          python -m pip install "cmake==4.2.3"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -c "import sysconfig; print(sysconfig.get_path('scripts'))" >> $env:GITHUB_PATH
+      - name: Configure Windows x64
+        shell: pwsh
+        run: |
+          $env:WEBVIEW2_SDK_DIR = "$env:RUNNER_TEMP/webview"
+          cmake --preset windows-${{ matrix.toolchain }}
+      - run: cmake --build build-windows-${{ matrix.toolchain }} --config Debug
+      - run: ctest --test-dir build-windows-${{ matrix.toolchain }} -C Debug --output-on-failure --no-tests=error
+      - run: cmake --build build-windows-${{ matrix.toolchain }} --config Release
+      - run: ctest --test-dir build-windows-${{ matrix.toolchain }} -C Release --output-on-failure --no-tests=error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: miyazato-windows-${{ matrix.toolchain }}
+          path: |
+            build-windows-${{ matrix.toolchain }}/Release/MiyazatoSpatialEngine.exe
+            build-windows-${{ matrix.toolchain }}/Release/ui/
+  portable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build-linux -DMIYAZATO_BUILD_DESKTOP=OFF -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build-linux -j 4
+      - run: ctest --test-dir build-linux --output-on-failure

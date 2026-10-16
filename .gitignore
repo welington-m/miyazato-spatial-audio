@@ -1,0 +1,20 @@
+build*/
+node_modules/
+dist/
+.vs/
+*.user
+.cache/
+*.tsbuildinfo
+
+# Generated copies only; assets/branding is canonical and tracked.
+/apps/desktop/ui/public/branding/
+*:Zone.Identifier
+
+# Separate toolchain output trees.
+/build-windows-vs2026/
+/build-windows-vs2022/
+/build-linux/
+
+# Downloaded Microsoft prerequisite installers.
+/installer/windows/prerequisites/*.exe
+/installer/windows/prerequisites/*.download

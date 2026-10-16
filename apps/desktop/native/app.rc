@@ -1,0 +1,3 @@
+#include "resource.h"
+// CMake synchronizes the official ICO into the generated branding directory.
+IDI_MSE_APP ICON "branding/miyazato-spatial-engine.ico"

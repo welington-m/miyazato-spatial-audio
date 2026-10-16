@@ -1,0 +1,89 @@
+{
+  "name": "Music",
+  "category": "Music",
+  "eq": [
+    {
+      "frequency": 31,
+      "gainDb": 1,
+      "q": 0.707,
+      "enabled": true,
+      "type": 0
+    },
+    {
+      "frequency": 63,
+      "gainDb": 2,
+      "q": 0.707,
+      "enabled": true,
+      "type": 0
+    },
+    {
+      "frequency": 125,
+      "gainDb": 1,
+      "q": 0.707,
+      "enabled": true,
+      "type": 0
+    },
+    {
+      "frequency": 250,
+      "gainDb": 0,
+      "q": 0.707,
+      "enabled": true,
+      "type": 0
+    },
+    {
+      "frequency": 500,
+      "gainDb": -1,
+      "q": 0.707,
+      "enabled": true,
+      "type": 0
+    },
+    {
+      "frequency": 1000,
+      "gainDb": 0,
+      "q": 0.707,
+      "enabled": true,
+      "type": 0
+    },
+    {
+      "frequency": 2000,
+      "gainDb": 1,
+      "q": 0.707,
+      "enabled": true,
+      "type": 0
+    },
+    {
+      "frequency": 4000,
+      "gainDb": 1,
+      "q": 0.707,
+      "enabled": true,
+      "type": 0
+    },
+    {
+      "frequency": 8000,
+      "gainDb": 2,
+      "q": 0.707,
+      "enabled": true,
+      "type": 0
+    },
+    {
+      "frequency": 16000,
+      "gainDb": 1,
+      "q": 0.707,
+      "enabled": true,
+      "type": 0
+    }
+  ],
+  "bass": 26,
+  "clarity": 20,
+  "width": 100,
+  "crossfeed": 0,
+  "preampDb": -6,
+  "outputDb": 0,
+  "compressorEnabled": false,
+  "thresholdDb": -18,
+  "ratio": 2,
+  "attackMs": 10,
+  "releaseMs": 120,
+  "makeupDb": 0,
+  "bypass": false
+}
