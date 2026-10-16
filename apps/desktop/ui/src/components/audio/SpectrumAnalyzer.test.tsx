@@ -270,3 +270,34 @@ it("selects output independently, recreates on device changes, and preserves inp
   view.unmount();
   expect(post).toHaveBeenLastCalledWith("analyzer.stop");
 });
+
+it("shows recovery without illustrative bars and ignores another source status", () => {
+  render(
+    <SpectrumAnalyzer running={false} nativeAvailable outputId="speakers" />,
+  );
+  expect(
+    screen.queryByRole("img", { name: "Static mock spectrum" }),
+  ).not.toBeInTheDocument();
+  act(() =>
+    receive({
+      type: "spectrum.status",
+      source: "output",
+      status: "recovering",
+      available: false,
+      paused: false,
+    }),
+  );
+  expect(screen.getByRole("status")).toHaveTextContent("Reconnecting");
+  act(() =>
+    receive({
+      type: "spectrum.status",
+      source: "input",
+      status: "unavailable",
+      available: false,
+      paused: false,
+    }),
+  );
+  expect(screen.getByRole("status")).toHaveTextContent("Reconnecting");
+  deliver();
+  expect(screen.getByRole("status")).toHaveTextContent("LIVE");
+});

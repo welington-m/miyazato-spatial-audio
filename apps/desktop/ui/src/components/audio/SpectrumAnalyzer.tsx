@@ -17,13 +17,15 @@ import {
 } from "./spectrum";
 import type { TranslationKey } from "../../i18n/types";
 
-type Phase = "preview" | "awaiting" | "live" | "paused" | "unavailable";
+type Phase =
+  "preview" | "awaiting" | "live" | "paused" | "unavailable" | "recovering";
 const statusKeys: Record<Phase, TranslationKey> = {
   preview: "spectrum.status.illustrative",
   awaiting: "spectrum.status.awaiting",
   live: "spectrum.status.live",
   paused: "spectrum.status.paused",
   unavailable: "spectrum.status.unavailable",
+  recovering: "spectrum.status.recovering",
 };
 // Fixed browser-only fallback. These bars never move and are never labeled live.
 const illustrativeHeights = Array.from(
@@ -128,9 +130,19 @@ export default memo(function SpectrumAnalyzer({
         }
         updatePhase(canvasReady.current ? "live" : "unavailable");
       }
-      if (event.type === "spectrum.status" && !event.available) {
+      if (
+        event.type === "spectrum.status" &&
+        !event.available &&
+        (!event.source || event.source === source)
+      ) {
         frame.current = null;
-        updatePhase(event.paused ? "paused" : "unavailable");
+        updatePhase(
+          event.paused
+            ? "paused"
+            : event.status === "recovering" || event.status === "starting"
+              ? "recovering"
+              : "unavailable",
+        );
       }
     });
   }, [nativeAvailable, running, source, endpoint, outputId]);
@@ -226,7 +238,12 @@ export default memo(function SpectrumAnalyzer({
       window.removeEventListener("resize", resize);
     };
   }, [nativeAvailable]);
-  const illustrative = !hadLive.current && phase !== "unavailable";
+  const illustrative =
+    !nativeAvailable ||
+    (!independent &&
+      !hadLive.current &&
+      phase !== "unavailable" &&
+      phase !== "recovering");
   const ticks = [
     ...frequencyTicks.filter(
       (frequency) =>

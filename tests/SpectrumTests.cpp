@@ -1,3 +1,4 @@
+#include "engine/audio/wasapi/AnalyzerState.h"
 #include "engine/dsp/Dsp.h"
 #include "engine/dsp/analyzer/AnalyzerMix.h"
 #include "engine/dsp/analyzer/SpectrumAnalyzer.h"
@@ -304,4 +305,19 @@ TEST_CASE("Endpoint analyzer decodes PCM containers and averages surround withou
     REQUIRE(mono == std::array<float, 2>{0.f, 0.f});
     const double sample = .25;
     REQUIRE(decode(reinterpret_cast<const unsigned char *>(&sample), 64, 64, true) == .25f);
+}
+
+TEST_CASE("Analyzer endpoint recovery preserves explicit selections") {
+    using namespace miyazato::windows;
+    REQUIRE_FALSE(analyzerEndpointChanged(false, false, true));
+    REQUIRE(analyzerEndpointChanged(true, false, true));
+    REQUIRE_FALSE(analyzerEndpointChanged(true, true, true));
+    REQUIRE(analyzerEndpointChanged(false, true, false));
+    REQUIRE(analyzerEndpointChanged(true, true, false));
+    REQUIRE(analyzerFailureState(AnalyzerState::Running) == AnalyzerState::Recovering);
+    REQUIRE(analyzerFailureState(AnalyzerState::Starting) == AnalyzerState::Unavailable);
+    REQUIRE(analyzerFailureState(AnalyzerState::Recovering) == AnalyzerState::Unavailable);
+    REQUIRE(analyzerFailureState(AnalyzerState::Stopping) == AnalyzerState::Stopping);
+    REQUIRE(std::string(analyzerStateName(AnalyzerState::Recovering)) == "recovering");
+    REQUIRE(std::string(analyzerStateName(AnalyzerState::Unavailable)) == "unavailable");
 }

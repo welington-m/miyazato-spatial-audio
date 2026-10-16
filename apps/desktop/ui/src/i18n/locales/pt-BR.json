@@ -414,6 +414,7 @@
   "spectrum.status.illustrative": "ILUSTRATIVO · sem conexão de áudio",
   "spectrum.status.awaiting": "Aguardando FFT ao vivo",
   "spectrum.status.paused": "Analisador pausado",
+  "spectrum.status.recovering": "Reconectando",
   "spectrum.status.unavailable": "Analisador indisponível",
   "spectrum.liveAria": "Espectro de frequências ao vivo",
   "spectrum.observation": "L/R combinados · após o limitador · 64 bandas logarítmicas",

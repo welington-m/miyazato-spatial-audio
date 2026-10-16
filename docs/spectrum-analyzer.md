@@ -174,3 +174,90 @@ Compare output with analysis disabled to confirm unchanged playback.
 Added tests cover PCM/float conversion, surround averaging, silent null packets,
 source preservation, UI input/output routing, endpoint changes and analyzer-only
 stop/start commands. Windows COM lifecycle tests and live validation remain pending.
+
+## Stability follow-up: implementation and evidence
+
+The starting checkout already contained `AnalyzerCapture`, input/output selectors,
+format conversion, the bounded analyzer queue, and output loopback. This change
+hardens that implementation; it does not replace the FFT or introduce another
+playback route. The original post-limiter-only observation defect is documented
+above. A particular Windows driver's remaining failure cannot be diagnosed from
+this Linux checkout without a live endpoint test.
+
+The lifecycle is now explicit:
+
+- `stopped` → `starting` → `running` on successful selection.
+- Loss of a running endpoint or FFT-worker failure enters `recovering`.
+- Failed initialization/retry enters `unavailable`; retries continue every 500 ms.
+- A default-endpoint change releases the old capture session and enters
+  `recovering` before resolving the current default.
+- Explicit selections always retry the same ID. They never silently fall back to
+  default. Reconnecting that endpoint can resume acquisition.
+- Stop requests join acquisition, release capture resources, stop/join the FFT
+  worker, then publish `stopped`. Source switching performs stop before start.
+
+The host's existing `IMMNotificationClient` is reused. Device notifications request
+an analyzer endpoint check and refresh the input/output selector lists. Acquisition
+handles this request itself, within its existing 20 ms wait cadence; callbacks do
+not open or release capture sessions. Default notifications now include input
+endpoints. Periodic 500 ms checks remain as a fallback, including an explicit
+`IMMDevice::GetState` check for disconnected/disabled endpoints. The existing DSP
+route's separate device-loss handling is retained.
+
+All sessions still use `GetMixFormat`, shared mode, event callbacks, and loopback
+only for `eRender`. Formats remain float32/64 and PCM8/16/24/32 (including
+extensible valid bits), at the endpoint rate. No resampling or playback format
+change is introduced. The mono signal is the arithmetic mean of all channels,
+including LFE for multichannel endpoints. This bounds gain for normalized inputs
+but can cancel anti-phase channels; it is a visualization mix, not a speaker
+remix. Silent packets and idle sessions feed zeros. The existing preallocated
+SPSC queue drops new analyzer blocks when full; acquisition never waits for FFT
+or UI. The FFT, windowing, dBFS, logarithmic bands and smoothing are unchanged.
+
+`spectrum.status` adds technical `status`, `sampleRate`, `channels`, and
+`acquisitionCpuMs` fields while preserving `source`, `available` and `paused`.
+Status is published on state changes and otherwise at most once per second.
+`acquisitionCpuMs` is cumulative user+kernel CPU time for the acquisition thread,
+queried with `GetThreadTimes`; it resets when a new acquisition thread starts,
+not on internal session retries. Compare counter deltas over elapsed wall time
+for acquisition CPU usage. Existing spectrum frames retain FFT compute wall time,
+observed update rate and dropped block/frame counters. FFT compute wall time is
+**not** a measurement of total FFT-thread CPU. Windows acquisition/FFT CPU and
+playback impact measurements are still pending; no CPU percentage is claimed.
+
+React translates lifecycle state in en, pt-BR, es and ja. Reconnecting and
+unavailable views clear their target. The independent native endpoint view does
+not show illustrative bars while awaiting its first real frame. Browser preview
+retains its explicitly labeled static illustration. Status for another source is
+ignored. Analyzer failures and UI disconnects never call a render interface or
+change the DSP profile.
+
+### Validation in this workspace
+
+- Frontend production build: passed.
+- Default `npm run test`: 46 passed, one help integration test hit its 5-second
+  timeout. `npm run test -- --maxWorkers=1 --testTimeout=15000`: all 47 passed.
+- Added a Catch2 case for pinned/default endpoint recovery decisions and failure
+  transitions, and a React case for recovery, empty initial native bars, source
+  filtering, and return to measured live data.
+- CMake/native suite rebuild: unavailable (`cmake` is not installed, and cached
+  Catch2 source headers are absent). Newly added Catch2 tests have not run in the
+  project runner.
+- Fresh focused C++ checks compiled directly with GCC in debug and `-O3` modes:
+  passed recovery decisions, 44.1/48/96 kHz worker acquisition, stereo averaging,
+  input preservation, null silent packets, queue overflow, and clean worker stop.
+  This temporary portable harness does not exercise Windows COM/WASAPI.
+- Existing cached Debug executables passed 11 DSP and 12 spectrum cases. These
+  binaries predate this change and are baseline evidence only.
+- Visual Studio 18 2026 Debug/Release builds and CTest: not run; Windows toolchain
+  and hardware are unavailable here.
+- Windows 11 manual tests A–I: **all pending**, including real microphone/playback,
+  pause decay, bass response, explicit endpoint routing, switching, unplug/replug,
+  default changes, and clean application shutdown. Also measure CPU/drop counters
+  during playback and UI failure, and compare audio with analysis stopped.
+
+Diff review: nothing under `engine/dsp/` changed. Playback routing, render code,
+limiter, EQ, DSP samples, presets and volume were not modified. This is a source
+inspection result; listening/physical-output equivalence is not yet verified.
+No other roadmap feature was implemented. The feature must remain marked
+**awaiting Windows validation**, not production complete.

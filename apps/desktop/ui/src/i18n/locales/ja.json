@@ -414,6 +414,7 @@
   "spectrum.status.illustrative": "イメージ表示 · オーディオ未接続",
   "spectrum.status.awaiting": "FFTデータを待機中",
   "spectrum.status.paused": "アナライザー一時停止中",
+  "spectrum.status.recovering": "再接続中",
   "spectrum.status.unavailable": "アナライザーを利用できません",
   "spectrum.liveAria": "リアルタイム周波数スペクトル",
   "spectrum.observation": "L/R合成 · リミッター後 · 64の対数帯域",
