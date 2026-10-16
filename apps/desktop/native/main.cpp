@@ -46,7 +46,7 @@ class DeviceNotifications final
         return S_OK;
     }
     HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(EDataFlow flow, ERole, LPCWSTR) override {
-        if (flow == eRender)
+        if (flow == eRender || flow == eCapture)
             changed();
         return S_OK;
     }
@@ -76,6 +76,15 @@ json devices() {
                         {"floatFormat", d.floatFormat}});
     return rows;
 }
+void sendAnalyzerDevices() {
+    json rows = json::array();
+    for (auto flow : {eRender, eCapture})
+        for (const auto &d : miyazato::windows::enumerateDevices(flow))
+            rows.push_back({{"id", miyazato::windows::utf8(d.id)},
+                            {"name", miyazato::windows::utf8(d.name)},
+                            {"source", flow == eRender ? "output" : "input"}});
+    send({{"type", "analyzer.devices"}, {"devices", rows}});
+}
 void receive(const json &m) {
     const std::string type = m.at("type");
     auto request = m.value("requestId", std::string{});
@@ -92,13 +101,7 @@ void receive(const json &m) {
             spectrumCapture.stop();
             spectrumPaused = true;
         } else if (type == "analyzer.devices") {
-            json rows = json::array();
-            for (auto flow : {eRender, eCapture})
-                for (const auto &d : miyazato::windows::enumerateDevices(flow))
-                    rows.push_back({{"id", miyazato::windows::utf8(d.id)},
-                                    {"name", miyazato::windows::utf8(d.name)},
-                                    {"source", flow == eRender ? "output" : "input"}});
-            send({{"type", "analyzer.devices"}, {"devices", rows}});
+            sendAnalyzerDevices();
         } else if (type == "devices.list")
             send({{"type", "devices"}, {"devices", devices()}, {"requestId", request}});
         else if (type == "settings.load") {
@@ -181,6 +184,8 @@ void receive(const json &m) {
 LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case deviceChangeMessage:
+        spectrumCapture.notifyDeviceChange();
+        try { sendAnalyzerDevices(); } catch (...) { /* Optional analyzer list refresh. */ }
         if (wp)
             engine.stop();
         try {
@@ -251,8 +256,19 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                       {"updatesPerSecond", latest.updatesPerSecond},
                       {"droppedBlocks", latest.droppedBlocks},
                       {"droppedFrames", latest.droppedFrames}});
-            else if (!spectrumCapture.available())
-                send({{"type", "spectrum.status"}, {"available", false}, {"paused", spectrumPaused}, {"source", spectrumSource}});
+            // Fixed timer cadence bounds diagnostics; no JSON or UI work on acquisition.
+            static uint64_t lastDiagnostics = 0;
+            static auto lastAnalyzerState = miyazato::windows::AnalyzerState::Stopped;
+            const auto analyzerState = spectrumCapture.state();
+            if (analyzerState != lastAnalyzerState || now - lastDiagnostics >= 1000) {
+                lastDiagnostics = now;
+                lastAnalyzerState = analyzerState;
+                send({{"type", "spectrum.status"}, {"available", spectrumCapture.available()},
+                      {"paused", spectrumPaused}, {"source", spectrumSource},
+                      {"status", miyazato::windows::analyzerStateName(spectrumCapture.state())},
+                      {"sampleRate", spectrumCapture.sampleRate()}, {"channels", spectrumCapture.channels()},
+                      {"acquisitionCpuMs", spectrumCapture.acquisitionCpuMs()}});
+            }
         } catch (...) {
             // UI expires stale frames; analyzer delivery is strictly best-effort.
         }

@@ -18,6 +18,7 @@ struct ComScope {
     HRESULT result{CoInitializeEx(nullptr, COINIT_MULTITHREADED)};
     ~ComScope() { if (SUCCEEDED(result)) CoUninitialize(); }
 };
+struct IdFree { void operator()(wchar_t *id) const { CoTaskMemFree(id); } };
 struct FormatFree { void operator()(WAVEFORMATEX *f) const { CoTaskMemFree(f); } };
 struct Event {
     HANDLE value{CreateEventW(nullptr, FALSE, FALSE, nullptr)};
@@ -35,17 +36,24 @@ struct Packet {
 
 }
 void AnalyzerCapture::stop() noexcept {
+    state_ = AnalyzerState::Stopping;
     if (acquisition_.joinable()) { acquisition_.request_stop(); acquisition_.join(); }
     spectrum_.stop();
+    state_ = AnalyzerState::Stopped;
 }
 void AnalyzerCapture::start(const std::wstring &endpoint, AnalyzerSource source) noexcept {
     stop();
+    state_ = AnalyzerState::Starting;
+    sampleRate_ = 0;
+    channels_ = 0;
+    acquisitionCpuMs_ = 0;
+    deviceChanged_ = false;
     try { acquisition_ = std::jthread([this, endpoint, source](std::stop_token t) { run(t, endpoint, source); }); }
-    catch (...) { /* Analysis is optional; playback is independent. */ }
+    catch (...) { state_ = AnalyzerState::Unavailable; }
 }
 void AnalyzerCapture::run(std::stop_token token, std::wstring endpoint, AnalyzerSource source) noexcept {
     ComScope com;
-    if (FAILED(com.result)) return;
+    if (FAILED(com.result)) { state_ = AnalyzerState::Unavailable; return; }
     // Retry unavailable/invalidated endpoints without touching playback. Empty ID follows default.
     while (!token.stop_requested()) {
         try {
@@ -63,7 +71,8 @@ void AnalyzerCapture::run(std::stop_token token, std::wstring endpoint, Analyzer
             if (actual != flow) throw std::runtime_error("Analyzer endpoint direction mismatch");
             LPWSTR id{};
             check(device->GetId(&id), "Analyzer ID");
-            std::wstring activeId(id); CoTaskMemFree(id);
+            std::unique_ptr<wchar_t, IdFree> ownedId(id);
+            std::wstring activeId(ownedId.get());
             ComPtr<IAudioClient> client;
             check(device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, &client), "Analyzer activate");
             WAVEFORMATEX *raw{};
@@ -95,6 +104,9 @@ void AnalyzerCapture::run(std::stop_token token, std::wstring endpoint, Analyzer
             if (!spectrum_.start(raw->nSamplesPerSec)) throw std::runtime_error("Analyzer worker");
             StopClient stop{client.Get()};
             check(client->Start(), "Analyzer start");
+            sampleRate_ = raw->nSamplesPerSec;
+            channels_ = raw->nChannels;
+            state_ = AnalyzerState::Running;
             auto lastDefaultCheck = std::chrono::steady_clock::now();
             auto lastSamples = lastDefaultCheck;
             auto lastSilence = lastDefaultCheck;
@@ -102,15 +114,27 @@ void AnalyzerCapture::run(std::stop_token token, std::wstring endpoint, Analyzer
             while (!token.stop_requested()) {
                 if (WaitForSingleObject(event.value, 20) == WAIT_FAILED) throw std::runtime_error("Analyzer wait");
                 const auto now = std::chrono::steady_clock::now();
-                if (endpoint.empty() && now - lastDefaultCheck >= std::chrono::milliseconds(500)) {
+                if (!spectrum_.available()) throw std::runtime_error("Analyzer worker stopped");
+                if (deviceChanged_.exchange(false) ||
+                    now - lastDefaultCheck >= std::chrono::milliseconds(500)) {
                     lastDefaultCheck = now;
-                    ComPtr<IMMDevice> current;
-                    check(enumerator->GetDefaultAudioEndpoint(flow, eConsole, &current), "Analyzer default change");
-                    LPWSTR currentId{};
-                    check(current->GetId(&currentId), "Analyzer default ID");
-                    const bool changed = activeId != currentId;
-                    CoTaskMemFree(currentId);
-                    if (changed) break;
+                    FILETIME creation{}, exit{}, kernel{}, user{};
+                    if (GetThreadTimes(GetCurrentThread(), &creation, &exit, &kernel, &user)) {
+                        const auto ticks = [](FILETIME t) { return (uint64_t(t.dwHighDateTime) << 32) | t.dwLowDateTime; };
+                        acquisitionCpuMs_ = (ticks(kernel) + ticks(user)) / 10000.0;
+                    }
+                    DWORD deviceState{};
+                    check(device->GetState(&deviceState), "Analyzer endpoint state");
+                    if (analyzerEndpointChanged(endpoint.empty(), true, deviceState == DEVICE_STATE_ACTIVE)) break;
+                    if (endpoint.empty()) {
+                        ComPtr<IMMDevice> current;
+                        check(enumerator->GetDefaultAudioEndpoint(flow, eConsole, &current), "Analyzer default change");
+                        LPWSTR currentId{};
+                        check(current->GetId(&currentId), "Analyzer default ID");
+                        std::unique_ptr<wchar_t, IdFree> ownedCurrentId(currentId);
+                        const bool changed = activeId != ownedCurrentId.get();
+                        if (analyzerEndpointChanged(true, !changed, true)) break;
+                    }
                 }
                 UINT32 count{};
                 check(capture->GetNextPacketSize(&count), "Analyzer packet size");
@@ -147,10 +171,15 @@ void AnalyzerCapture::run(std::stop_token token, std::wstring endpoint, Analyzer
                     // Wait above bounds silence production to the acquisition cadence.
                 }
             }
-        } catch (...) { /* Endpoint loss and format errors affect analysis only. */ }
+        } catch (...) {
+            state_ = analyzerFailureState(state());
+        }
+        if (state() == AnalyzerState::Running) state_ = AnalyzerState::Recovering;
         spectrum_.stop();
-        for (int i = 0; i < 25 && !token.stop_requested(); ++i)
+        for (int i = 0; i < 25 && !token.stop_requested(); ++i) {
+            if (deviceChanged_.exchange(false)) break;
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
     }
 }
 }

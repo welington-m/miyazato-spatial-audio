@@ -53,6 +53,16 @@ export type HostEvent =
       type: "spectrum.status";
       available: boolean;
       paused: boolean;
+      status?:
+        | "stopped"
+        | "starting"
+        | "running"
+        | "recovering"
+        | "unavailable"
+        | "stopping";
+      sampleRate?: number;
+      channels?: number;
+      acquisitionCpuMs?: number;
       source?: AnalyzerSource;
     }
   | { type: "devices"; devices: Device[] }
